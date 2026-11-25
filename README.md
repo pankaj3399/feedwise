@@ -2,9 +2,9 @@
 
 **doomscroll, but wiser.**
 
-Feedwise is a small, installable reading app that replaces the reflex scroll with an endless feed of atomic ideas. Every card is one self-contained insight pulled from the 112 engineering essays on [arpitbhayani.me](https://arpitbhayani.me/blogs/) — around 600 insights in total — with streaks, XP, recall quizzes, saved ideas, collections, highlights and notes on top.
+Feedwise is a small, installable reading app that replaces the reflex scroll with an endless feed of atomic ideas. Every card is one self-contained insight pulled from the 112 engineering essays on [arpitbhayani.me](https://arpitbhayani.me/blogs/) — 680 curated insights in total — with streaks, XP, recall quizzes, saved ideas, collections, highlights and notes on top.
 
-> Feedwise is an independent, personal reading layer. All ideas and words belong to Arpit Bhayani; every card links back to the original essay. It is not affiliated with the author.
+> Feedwise is an independent, personal reading layer. All ideas and underlying essays belong to Arpit Bhayani; cards are editorial paraphrases and link back to the original. It is not affiliated with the author.
 
 ## What's inside
 
@@ -69,16 +69,20 @@ The generated content is committed, so you only need this if you want to refresh
 
 ```bash
 pnpm content:fetch   # scrape the 112 essay pages into .cache/pages
+pnpm content:merge   # merge curated batches into content/curated.json
 pnpm content:build   # rebuild content/feed.json + content/quizzes.json
-pnpm content         # both of the above
+pnpm content:curate  # merge + build
+pnpm content         # fetch + build (extraction fallback only)
 ```
+
+Curated cards are authored per essay in `content/curated.json`; implementation notes and practical steps live in `content/curated-details.json`. The batch workflow (`scripts/merge-curated.mjs`) merges `.cache/curated/batch-*.json`, validates types, titles, coverage, action lists and copy-paste runs, then writes both files.
 
 `content:build` also writes client-fetchable copies to `public/data/`, which the feed uses for infinite scrolling and offline reading.
 
 There are two content paths:
 
-- **Editorial (curated) cards** in `content/curated.json`. For an essay listed there, each card is written for the reader: a specific headline, a 2–4 sentence explanation in our own words, a one-line "why it matters", and a type. Action cards render their lists as checklists. If the essay is not in the overlay, the builder falls back to extraction.
-- **Extraction fallback** for the rest, described below.
+- **Editorial (curated) cards** in `content/curated.json`. All 112 essays are currently editorially curated: each card has a specific headline, a 2–4 sentence explanation in our own words, a one-line "why it matters", a type, an implementation/application note and practical steps. Action cards render their lists as checklists.
+- **Extraction fallback** in `scripts/build-content.mjs` for any future essay that is not in the overlay yet.
 
 How the extraction works:
 
