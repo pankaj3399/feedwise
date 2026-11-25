@@ -1,0 +1,811 @@
+[
+  {
+    "id": "compiling-an-sop-into-a-3b-model--curated-1",
+    "article": "compiling-an-sop-into-a-3b-model",
+    "title": "A 3B model matched Gemini on incident triage at 8.4× lower cost",
+    "type": "result",
+    "takeaway": "A stable, repeated procedure can be compiled into model weights instead of resent on every turn.",
+    "section": "The Experimental Numbers",
+    "anchor": "the-experimental-numbers",
+    "part": 1,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "The experiment compiled a 3,500-token incident-triage SOP into a QLoRA-tuned Qwen2.5-3B. It reached 93.0% end-to-end accuracy against Gemini 2.5 Pro's 92.0%, while shrinking the prompt from 5,200 to 450 input tokens per incident."
+      },
+      {
+        "type": "list",
+        "items": [
+          "93.0% accuracy vs 92.0% for Gemini 2.5 Pro",
+          "5,200 → 450 input tokens per incident, a 91.3% cut",
+          "$1.85 → $0.22 per 1,000 incidents, an 8.4× cost reduction",
+          "115 MB adapter, trained in under four hours on one RTX 3060"
+        ]
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "compiling-an-sop-into-a-3b-model--curated-2",
+    "article": "compiling-an-sop-into-a-3b-model",
+    "title": "A procedural prompt is a tax you pay on every turn",
+    "type": "concept",
+    "takeaway": "The cost of a long SOP is not writing it once; it is resending it forever.",
+    "section": "Workflow",
+    "anchor": "workflow",
+    "part": 2,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "Most agent setups paste the whole workflow into the system prompt and send it back on every turn. A 3,500-token SOP across five or six turns becomes roughly 5,200 input tokens per incident. The model rereads the same instructions instead of learning them."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "compiling-an-sop-into-a-3b-model--curated-3",
+    "article": "compiling-an-sop-into-a-3b-model",
+    "title": "Replace the SOP with a trigger token",
+    "type": "pattern",
+    "takeaway": "If the procedure is stable, the prompt can shrink to a name the weights already understand.",
+    "section": "Zero Procedural Prompt",
+    "anchor": "zero-procedural-prompt",
+    "part": 3,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "The compiled setup keeps zero instructions, schemas and runbooks in the prompt. The entire system prompt is `incident_triage_v1`. The state machine lives in the adapter, and the model still executes the diagnostic turns in the right order."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "compiling-an-sop-into-a-3b-model--curated-4",
+    "article": "compiling-an-sop-into-a-3b-model",
+    "title": "Mask the loss on tool outputs",
+    "type": "pattern",
+    "takeaway": "Train the model on its decisions, not on the simulated environment it reads.",
+    "section": "The Training Setup: Loss Masking On Assistant Turns",
+    "anchor": "the-training-setup-loss-masking-on-assistant-turns",
+    "part": 4,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "In a multi-turn tool-calling trace, most tokens are user alerts and tool responses. Computing loss over all of them teaches the model to memorize random telemetry and commit hashes. Label those tokens `-100` so gradients flow only through the assistant's actions."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "compiling-an-sop-into-a-3b-model--curated-5",
+    "article": "compiling-an-sop-into-a-3b-model",
+    "title": "Build a simulator and an oracle before you fine-tune",
+    "type": "action",
+    "takeaway": "Synthetic multi-turn data only works when every trace is verifiably correct.",
+    "section": "Building A Simulator And Generating Training Data",
+    "anchor": "building-a-simulator-and-generating-training-data",
+    "part": 5,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "The experiment used a deterministic simulator with 12 microservices and 9 root causes, plus an oracle that knows the optimal path through the state machine. The oracle generated 5,116 conversations across five alert styles."
+      },
+      {
+        "type": "list",
+        "items": [
+          "Model the workflow as a finite state machine.",
+          "Build a deterministic environment with known root causes.",
+          "Write an oracle that produces the optimal sequence.",
+          "Vary the alert format: PagerDuty, Slack, email, SMS, freeform.",
+          "Reject any trace that fails step order, schema, entity, root-cause, runbook or evidence checks."
+        ]
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "compiling-an-sop-into-a-3b-model--curated-6",
+    "article": "compiling-an-sop-into-a-3b-model",
+    "title": "Compiled weights are fast and cheap, but frozen",
+    "type": "tradeoff",
+    "takeaway": "Compile stable procedures; keep prompts for rules that change every week.",
+    "section": "What I Learned From The Experiment",
+    "anchor": "what-i-learned-from-the-experiment",
+    "part": 6,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "Prompts are easy to edit when the process changes; compiled weights are not. The compiled model wins on speed, prompt overhead and predictable local execution, but a rule change means retraining or versioning the adapter."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+
+  {
+    "id": "slop-debt--curated-1",
+    "article": "slop-debt",
+    "title": "Slop debt is incoherence, not technical debt at volume",
+    "type": "thesis",
+    "takeaway": "The danger of LLM-generated code is not how much there is; it is that nobody chose its shape.",
+    "section": "",
+    "anchor": "",
+    "part": 1,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "Slop debt is what accumulates when most of a codebase is generated by an LLM, reviewed by nobody who understands it, and merged because the tests pass. It compiles and works for now, but it was predicted one plausible token at a time rather than designed."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "slop-debt--curated-2",
+    "article": "slop-debt",
+    "title": "Tech debt comes from a decision; slop debt comes from the absence of one",
+    "type": "concept",
+    "takeaway": "A decision leaves a reason you can recover. Slop leaves no author to ask.",
+    "section": "Why It Is Not The Same Thing",
+    "anchor": "why-it-is-not-the-same-thing",
+    "part": 2,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "Classic tech debt is a tradeoff: skip the abstraction, hardcode a value, ship now. The reason survives in the person or the git history. Slop debt has no architect; the model chose the variable names and error handling independently for every file, with no memory of the last one."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "slop-debt--curated-3",
+    "article": "slop-debt",
+    "title": "Slop debt compounds because the model reads its own slop",
+    "type": "failure",
+    "takeaway": "Every generation pass turns existing incoherence into context for the next pass.",
+    "section": "Why It Grows Exponentially",
+    "anchor": "why-it-grows-exponentially",
+    "part": 3,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "Once a codebase has hundreds of files of locally correct but globally inconsistent code, the next generation pass uses that code as context. It copies the bad abstraction because that is what it sees, and adds a third error-handling style because it cannot tell which of the first two is intended."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "slop-debt--curated-4",
+    "article": "slop-debt",
+    "title": "Code review cannot catch slop because slop is plausible",
+    "type": "failure",
+    "takeaway": "Reviewers pattern-match on plausibility; slop is wrong in how it fits, not in how it reads.",
+    "section": "The Point Where Debugging Stops Working",
+    "anchor": "the-point-where-debugging-stops-working",
+    "part": 4,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "A slop diff reads correctly. It is only wrong in the way it fails to fit with everything around it, and that kind of wrong does not show up in a line-by-line diff. The person who \"wrote\" it clicked accept."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "slop-debt--curated-5",
+    "article": "slop-debt",
+    "title": "Incremental refactoring does not fix smeared incoherence",
+    "type": "failure",
+    "takeaway": "Tech debt is local; slop debt is everywhere at low intensity.",
+    "section": "Why Refactoring Does Not Save You",
+    "anchor": "why-refactoring-does-not-save-you",
+    "part": 5,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "The normal move for tech debt is to isolate a module, test it, clean it up and move on. Slop debt has no single module to point at. Cleaning one file does not reduce the system's confusion while the file next to it generates new confusion at the same rate."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "slop-debt--curated-6",
+    "article": "slop-debt",
+    "title": "Past a certain size, rewrite with a human-owned architecture",
+    "type": "action",
+    "takeaway": "At scale, the honest fix is not \"clean it up\" but \"start over with a shape a human chose\".",
+    "section": "What Actually Prevents It",
+    "anchor": "what-actually-prevents-it",
+    "part": 6,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "Once slop debt has metastasized, refactoring cannot restore coherence. The workable reset is a rewrite where a human makes the architectural calls and the model is used as a tool inside a shape someone designed, not as the designer."
+      },
+      {
+        "type": "list",
+        "items": [
+          "Stop treating it as high-volume tech debt.",
+          "Accept that incremental cleanup will not reduce system-wide confusion.",
+          "Budget for a rewrite once incoherence is smeared across the codebase.",
+          "Keep a human in charge of architecture and use the model as an implementation tool."
+        ]
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+
+  {
+    "id": "ai-first-org--curated-1",
+    "article": "ai-first-org",
+    "title": "AI moves the bottleneck from writing code to verifying it",
+    "type": "thesis",
+    "takeaway": "If your process still optimizes for typing speed, it is optimizing for a constraint that no longer exists.",
+    "section": "",
+    "anchor": "",
+    "part": 1,
+    "parts": 7,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "Every process was built to manage scarce engineering time. Agentic coding removes typing as the bottleneck, but verification, review and security take its place. The constraint moves; it does not disappear."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "ai-first-org--curated-2",
+    "article": "ai-first-org",
+    "title": "Plan just in time, not six months ahead",
+    "type": "action",
+    "takeaway": "If a decision can be undone with one more prototype, skip the design doc.",
+    "section": "Planning",
+    "anchor": "planning",
+    "part": 2,
+    "parts": 7,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "A six-month roadmap is out of date by month three because the tools keep changing what is possible. AI-first teams do the minimum planning right before they need it and reserve a full design doc for decisions that are expensive to reverse."
+      },
+      {
+        "type": "list",
+        "items": [
+          "Prototype before writing a design doc.",
+          "Put it in front of 5–10 internal users within a day or two.",
+          "Move product decisions into the pull-request thread.",
+          "Write a design doc only for data-model or public-API changes."
+        ]
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "ai-first-org--curated-3",
+    "article": "ai-first-org",
+    "title": "Ask the model before the person",
+    "type": "pattern",
+    "takeaway": "The model watched the change; the author may no longer be the fastest path to context.",
+    "section": "Ask The Model Before The Person",
+    "anchor": "ask-the-model-before-the-person",
+    "part": 3,
+    "parts": 7,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "Before agentic coding, \"who wrote this\" was the fastest way to get context. Now the model can walk the git history, summarize ownership from CODEOWNERS and recent commits, and pull the PR discussion. Ask what you actually need to know, then go to a human for judgment calls the model cannot make."
+      },
+      {
+        "type": "list",
+        "items": [
+          "Regression: correlate git history with the failing test.",
+          "Ownership: summarize CODEOWNERS and recent commit activity.",
+          "Decision context: read the PR description and linked discussion.",
+          "Repeated question: turn it into a standing job."
+        ]
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "ai-first-org--curated-4",
+    "article": "ai-first-org",
+    "title": "Let AI own style, bugs and tests; humans keep security, legal and product judgment",
+    "type": "pattern",
+    "takeaway": "The test for a human gate: is a wrong call expensive to reverse, or does it require risk-tolerance judgment?",
+    "section": "Code Review - Trust But Verify",
+    "anchor": "code-review-trust-but-verify",
+    "part": 4,
+    "parts": 7,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "The model handles style, linting, PR feedback, bug fixes and tests. Humans stay where domain judgment cannot be automated: legal and compliance, security and trust boundaries, product taste and whether the feature solves the user's problem. If the answer to both questions is no, the PR does not need a human gate."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "ai-first-org--curated-5",
+    "article": "ai-first-org",
+    "title": "Hire for product sense and systems depth, not raw throughput",
+    "type": "concept",
+    "takeaway": "When the model absorbs the typing, the scarce skill is knowing where a human must decide.",
+    "section": "Team Makeup - Roles Blur On Purpose",
+    "anchor": "team-makeup-roles-blur-on-purpose",
+    "part": 5,
+    "parts": 7,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "Roles blur: PMs ship prototypes, engineers pick up content and design. The two profiles that matter are creative builders with product sense and engineers with deep systems expertise—distributed state, latency budgets, security boundaries—that a model cannot yet reason about reliably."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "ai-first-org--curated-6",
+    "article": "ai-first-org",
+    "title": "AI-assisted commit percentage is a trap metric",
+    "type": "failure",
+    "takeaway": "Throughput measures activity, not outcomes; pair it with retention, incidents or adoption.",
+    "section": "Metrics That Tell You The New Norms Are Sticking",
+    "anchor": "metrics-that-tell-you-the-new-norms-are-sticking",
+    "part": 6,
+    "parts": 7,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "A team can drive AI-assisted commits to 100% and still ship the wrong thing faster. Track onboarding ramp time, PR cycle time and the share of AI-assisted commits, but always pair throughput with a metric tied to the actual problem being solved."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "ai-first-org--curated-7",
+    "article": "ai-first-org",
+    "title": "Audit your noisiest workflow",
+    "type": "action",
+    "takeaway": "A ritual built for a bottleneck that no longer exists should be deleted or automated.",
+    "section": "Audit Your Noisiest Workflow",
+    "anchor": "audit-your-noisiest-workflow",
+    "part": 7,
+    "parts": 7,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "Pick the workflow your team dreads most: the status meeting, the manual release checklist, the weekly report nobody reads twice. Ask whether it still serves its original purpose, and if it does, whether it can be automated instead of run by hand."
+      },
+      {
+        "type": "list",
+        "items": [
+          "Name the gap the ritual was created to close.",
+          "Check whether that gap still exists with AI tools in the loop.",
+          "Kill the ritual if the gap is gone.",
+          "Automate it if the purpose remains."
+        ]
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+
+  {
+    "id": "three-skills--curated-1",
+    "article": "three-skills",
+    "title": "Docs rot silently; tools fail loudly",
+    "type": "thesis",
+    "takeaway": "Encode operational knowledge as executable tools, not prose nobody notices is stale.",
+    "section": "Why Build Tools Instead of Writing Docs",
+    "anchor": "why-build-tools-instead-of-writing-docs",
+    "part": 1,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "A stale wiki can mislead people for months. A broken tool fails in front of the next person who uses it, which means it actually gets fixed. That difference matters more now that AI agents act on the same instructions."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "three-skills--curated-2",
+    "article": "three-skills",
+    "title": "The three skills are create-service, deploy and debug",
+    "type": "concept",
+    "takeaway": "These are the three places where missing knowledge turns into waiting, guessing and 2 AM incidents.",
+    "section": "Why Build Tools Instead of Writing Docs",
+    "anchor": "why-build-tools-instead-of-writing-docs",
+    "part": 2,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "The article's three skills: provision a new service end to end, deploy and roll back with tests and smoke checks, and diagnose an incident from symptoms to evidence. Each turns a manual, stale process into an executable one."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "three-skills--curated-3",
+    "article": "three-skills",
+    "title": "Build the debugging skill first",
+    "type": "action",
+    "takeaway": "Incidents happen on their own schedule, so every one can add a verified failure pattern.",
+    "section": "What I Would Actually Do",
+    "anchor": "what-i-would-actually-do",
+    "part": 3,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "The debugging skill should match live symptoms to known failure patterns for that service, link directly to the relevant logs, traces and dashboards, and run diagnostics instead of pointing at raw data. Start with the service that pages most and takes longest to fix."
+      },
+      {
+        "type": "list",
+        "items": [
+          "Keep a running incident history per service.",
+          "Link dependencies and their health dashboards.",
+          "Extract verified failure patterns from retros.",
+          "Return a likely cause, evidence and links—not \"check the logs\"."
+        ]
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "three-skills--curated-4",
+    "article": "three-skills",
+    "title": "Build deployment second, with rollback and smoke tests",
+    "type": "action",
+    "takeaway": "Rollback is the path used under pressure and the one most teams exercise least.",
+    "section": "What I Would Actually Do",
+    "anchor": "what-i-would-actually-do",
+    "part": 4,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "The deployment skill should run tests against the real target environment, roll out gradually, execute smoke tests automatically, and roll back without a human remembering a separate procedure. It needs deployment history, migration state, environment config and a defined set of smoke-test endpoints."
+      },
+      {
+        "type": "list",
+        "items": [
+          "Test against the real target environment.",
+          "Roll out gradually.",
+          "Run smoke tests automatically.",
+          "Roll back on failure without a separate manual runbook."
+        ]
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "three-skills--curated-5",
+    "article": "three-skills",
+    "title": "Build create-service last",
+    "type": "tradeoff",
+    "takeaway": "It touches the most infrastructure; a half-built version is worse than none.",
+    "section": "What I Would Actually Do",
+    "anchor": "what-i-would-actually-do",
+    "part": 5,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "The create-service skill provisions the database, wires logging, registers identity and deploys to production before anyone writes business logic. It is the most valuable day-one fix, but also the riskiest to half-build because it relocates confusion instead of removing it."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "three-skills--curated-6",
+    "article": "three-skills",
+    "title": "Track one metric per tool",
+    "type": "action",
+    "takeaway": "Pick a number that is cheap to measure and hard to argue with.",
+    "section": "What I Would Actually Do",
+    "anchor": "what-i-would-actually-do",
+    "part": 6,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "Measure time from a fresh repo to a live deployment, deployment frequency alongside rollback rate, and mean time to diagnose an incident. Feed incidents and rough onboarding experiences back into the tools as requirements."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+
+  {
+    "id": "g-eval--curated-1",
+    "article": "g-eval",
+    "title": "G-Eval turns an LLM into a rubric-driven judge",
+    "type": "thesis",
+    "takeaway": "Use it when output quality is real but there is no single gold answer to compare against.",
+    "section": "What G-Eval Is",
+    "anchor": "what-g-eval-is",
+    "part": 1,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "G-Eval is a prompting framework for reference-free evaluation. It gives a model a precise rubric, lets it generate its own evaluation steps, and converts its token probabilities into a fine-grained score instead of trusting a printed digit."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "g-eval--curated-2",
+    "article": "g-eval",
+    "title": "Reference-free evaluation is the point",
+    "type": "concept",
+    "takeaway": "Most real outputs—support replies, summaries, chatbot turns—have no one correct answer in a dataset.",
+    "section": "What G-Eval Is",
+    "anchor": "what-g-eval-is",
+    "part": 2,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "A reference-based metric needs a gold-standard example. G-Eval does not. It defines the dimension precisely and asks the judge to evaluate the candidate against that definition, which is why it can cover custom criteria like brand voice or refund-policy compliance."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "g-eval--curated-3",
+    "article": "g-eval",
+    "title": "Make the rubric precise, not a 1–5 vibe check",
+    "type": "pattern",
+    "takeaway": "A vague rubric collapses to \"does this look fine\"; a precise one gives the judge specific things to check.",
+    "section": "Why It Works",
+    "anchor": "why-it-works",
+    "part": 3,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "Instead of \"rate this 1 to 5\", define what coherence means in concrete terms. A vague rubric gives the model nothing to anchor against, so it cannot discriminate a mediocre output from a strong one. A precise rubric is also what makes human raters consistent."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "g-eval--curated-4",
+    "article": "g-eval",
+    "title": "Generate the evaluation chain-of-thought once per rubric",
+    "type": "pattern",
+    "takeaway": "Commit to a procedure before seeing outputs, then cache it.",
+    "section": "G-Eval in Practice",
+    "anchor": "g-eval-in-practice",
+    "part": 4,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "G-Eval asks the model to write its own evaluation steps from the task and criterion before it sees a candidate. That forces a concrete procedure instead of pattern-matching, and leaves an audit trail: when a score looks wrong, read the chain-of-thought to see where the judge diverged."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "g-eval--curated-5",
+    "article": "g-eval",
+    "title": "Never judge with the same model family",
+    "type": "failure",
+    "takeaway": "LLM judges show a measurable self-preference bias toward their own family.",
+    "section": "The Bias You Need to Know About",
+    "anchor": "the-bias-you-need-to-know-about",
+    "part": 5,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "Even when human reviewers prefer the alternative, judges favor text generated by models from their own family. Use a different family for the judge than for the system under test, pin the judge version, and recalibrate the rubric against human-labeled examples."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "g-eval--curated-6",
+    "article": "g-eval",
+    "title": "Use a classifier or parser when the answer is closed-form",
+    "type": "action",
+    "takeaway": "G-Eval is the wrong tool for toxicity, PII or valid JSON.",
+    "section": "When This Is the Wrong Tool",
+    "anchor": "when-this-is-the-wrong-tool",
+    "part": 6,
+    "parts": 6,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "Anything with a sharp, closed-form answer does not need a reasoning model reading a rubric. A fast classifier or parser is cheaper, faster and more reliable. Reach for G-Eval only when the judgment is open-ended."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+
+  {
+    "id": "ai-topological-sort--curated-1",
+    "article": "ai-topological-sort",
+    "title": "An AI workflow is a dependency graph, not a list",
+    "type": "thesis",
+    "takeaway": "If you cannot draw the edges, you cannot know what can run in parallel or what a failure affects.",
+    "section": "The Dependency Problem in AI Workflows",
+    "anchor": "the-dependency-problem-in-ai-workflows",
+    "part": 1,
+    "parts": 7,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "Every workflow has producers and consumers, and consumers cannot run before their inputs exist. A DAG models tasks as nodes and dependencies as directed edges; topological sort turns that graph into a valid execution order."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "ai-topological-sort--curated-2",
+    "article": "ai-topological-sort",
+    "title": "Dependencies are correctness constraints, not scheduling preferences",
+    "type": "concept",
+    "takeaway": "Running a step early does not save time; it reads stale data or calls a tool with missing context.",
+    "section": "The Dependency Problem in AI Workflows",
+    "anchor": "the-dependency-problem-in-ai-workflows",
+    "part": 2,
+    "parts": 7,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "Embedding before chunking embeds dirty text. Retrieving before the index is complete queries an incomplete index. The edges are not optional; they are the difference between a correct pipeline and a plausible-looking one."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "ai-topological-sort--curated-3",
+    "article": "ai-topological-sort",
+    "title": "Let the graph find parallelism",
+    "type": "pattern",
+    "takeaway": "Nodes in the same topological level have no dependency between them and can run concurrently.",
+    "section": "Modeling Workflows as DAGs",
+    "anchor": "modeling-workflows-as-dags",
+    "part": 3,
+    "parts": 7,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "In a branching RAG pipeline, keyword filtering and retrieval can run in parallel once the index is built; the merge node waits for both. Topological sort produces the order automatically, so the orchestrator does not hardcode sequencing."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "ai-topological-sort--curated-4",
+    "article": "ai-topological-sort",
+    "title": "Recompute only the affected subgraph",
+    "type": "pattern",
+    "takeaway": "On failure or input change, traverse forward from the affected node and reuse every cached output outside it.",
+    "section": "Incremental Re-execution",
+    "anchor": "incremental-re-execution",
+    "part": 4,
+    "parts": 7,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "This is how Bazel and Buck avoid rebuilding the world. The DAG makes it tractable: without explicit dependency edges, you cannot know which downstream nodes are affected."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "ai-topological-sort--curated-5",
+    "article": "ai-topological-sort",
+    "title": "Topological sort does not balance work",
+    "type": "failure",
+    "takeaway": "It tells you the order, not where the critical path is.",
+    "section": "What to Watch Out For",
+    "anchor": "what-to-watch-out-for",
+    "part": 5,
+    "parts": 7,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "If ten parallel tasks feed one merge node, the merge waits for the slowest. Profile the longest chain of dependent tasks to see where parallelism actually helps; fan-in bottlenecks remain."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "ai-topological-sort--curated-6",
+    "article": "ai-topological-sort",
+    "title": "Validate cycles at definition time, not at 2 AM",
+    "type": "action",
+    "takeaway": "A cycle means deadlock: A waits for B, B waits for A, nothing progresses.",
+    "section": "What to Watch Out For",
+    "anchor": "what-to-watch-out-for",
+    "part": 6,
+    "parts": 7,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "If the topological order is shorter than the graph, there is a cycle. Catch it when the workflow is defined, surface the offending cycle, and reject the workflow before a single task runs."
+      },
+      {
+        "type": "list",
+        "items": [
+          "Compare the topological order length with the node count.",
+          "Identify the nodes that remain in the cycle.",
+          "Reject the workflow at definition time.",
+          "Show a clear error instead of hanging at runtime."
+        ]
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  },
+  {
+    "id": "ai-topological-sort--curated-7",
+    "article": "ai-topological-sort",
+    "title": "A DAG is a contract",
+    "type": "concept",
+    "takeaway": "The graph is the spec; the topological order is the scheduler's input.",
+    "section": "The Mental Model to Keep",
+    "anchor": "the-mental-model-to-keep",
+    "part": 7,
+    "parts": 7,
+    "blocks": [
+      {
+        "type": "p",
+        "text": "Drawing the dependency graph first forces you to separate truly sequential tasks from independent ones. Parallelism, cycle safety and incremental recomputation all fall out of the structure you declared."
+      }
+    ],
+    "words": 0,
+    "kind": "insight"
+  }
+]

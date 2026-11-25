@@ -10,6 +10,7 @@ Feedwise is a small, installable reading app that replaces the reflex scroll wit
 
 - **An endless, swipe-style feed** of one-idea cards. Feed order is deterministic per user and per day, so it stays stable while you read, and likes/saves never reshuffle it.
 - **Latest tab** for a strict newest-essay-first read, plus category tabs. Inside `For you`, each essay's insights stay together and in order, so a run of cards reads like the argument of the essay instead of loose paragraphs.
+- **Typed, synthesized insight cards.** Curated essays render each idea as a concept, pattern, tradeoff, failure, action or result, with a "why it matters" line and checklist-style action items. Curated cards live in `content/curated.json` and replace the mechanical extraction for that essay.
 - **Email + password auth** with hashed passwords (`bcryptjs`) and database-backed sessions in an httpOnly cookie.
 - **Daily goal + streak** with a progress ring, a 7-day chart and a 28-day heatmap.
 - **XP, levels and topic mastery** across five topics: distributed systems, algorithms, systems internals, AI systems and career growth.
@@ -73,6 +74,11 @@ pnpm content         # both of the above
 ```
 
 `content:build` also writes client-fetchable copies to `public/data/`, which the feed uses for infinite scrolling and offline reading.
+
+There are two content paths:
+
+- **Editorial (curated) cards** in `content/curated.json`. For an essay listed there, each card is written for the reader: a specific headline, a 2–4 sentence explanation in our own words, a one-line "why it matters", and a type. Action cards render their lists as checklists. If the essay is not in the overlay, the builder falls back to extraction.
+- **Extraction fallback** for the rest, described below.
 
 How the extraction works:
 

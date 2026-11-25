@@ -6,6 +6,15 @@ export type Block =
   | { type: "table"; rows: string[][] }
   | { type: "h3"; text: string };
 
+export type InsightType =
+  | "thesis"
+  | "concept"
+  | "pattern"
+  | "tradeoff"
+  | "failure"
+  | "action"
+  | "result";
+
 export type Idea = {
   id: string;
   article: string;
@@ -17,6 +26,10 @@ export type Idea = {
   blocks: Block[];
   words: number;
   kind: "intro" | "section" | "insight";
+  /** What this card does for the reader, when the card was editorially typed. */
+  type?: InsightType | null;
+  /** One-line reason the idea is worth knowing. */
+  takeaway?: string | null;
   /** Essay section the insight came from, when it has one. */
   section?: string | null;
 };

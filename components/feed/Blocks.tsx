@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import type { Block } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { RichText } from "@/components/content/RichText";
@@ -10,10 +11,12 @@ export function Blocks({
   blocks,
   preview = false,
   className,
+  variant = "default",
 }: {
   blocks: Block[];
   preview?: boolean;
   className?: string;
+  variant?: "default" | "action";
 }) {
   const shown = preview
     ? blocks.filter((block) => block.type !== "code").slice(0, 3)
@@ -59,6 +62,22 @@ export function Blocks({
           );
         }
         if (block.type === "list") {
+          if (variant === "action") {
+            return (
+              <ul key={index} className="space-y-2.5">
+                {block.items.map((item, itemIndex) => (
+                  <li key={itemIndex} className="flex items-start gap-2.5 text-[14px] leading-relaxed">
+                    <span className="mt-0.5 grid size-[18px] shrink-0 place-items-center rounded-full bg-emerald-400/15 text-emerald-300">
+                      <Check size={11} strokeWidth={3} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <Inline text={item} />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            );
+          }
           const Tag = block.ordered ? "ol" : "ul";
           return (
             <Tag

@@ -6,6 +6,59 @@ const DIR = path.join(import.meta.dirname, "..", ".cache", "pages");
 const OUT = path.join(import.meta.dirname, "..", "content");
 await fs.mkdir(OUT, { recursive: true });
 
+// Hand-written, editorially typed cards. When an essay is present here, its
+// curated cards replace the mechanical extraction for that essay.
+const curated = {};
+try {
+  const raw = JSON.parse(await fs.readFile(path.join(OUT, "curated.json"), "utf8"));
+  for (const card of raw) {
+    (curated[card.article] ||= []).push(card);
+  }
+} catch {
+  // No curated overlay yet; every essay falls back to extraction.
+}
+
+function normaliseCurated(slug, cards) {
+  return cards
+    .map((card, index) => {
+      const blocks = (card.blocks ?? [])
+        .map((block) => {
+          if (block.type === "p") {
+            const text = String(block.text ?? "").replace(/\s+/g, " ").trim();
+            return text ? { type: "p", text } : null;
+          }
+          if (block.type === "list") {
+            const items = (block.items ?? []).map((item) => String(item).trim()).filter(Boolean);
+            return items.length ? { type: "list", ordered: Boolean(block.ordered), items } : null;
+          }
+          return null;
+        })
+        .filter(Boolean);
+      const wordCount = blocks.reduce((n, block) => {
+        if (block.type === "p") return n + words(block.text);
+        if (block.type === "list") return n + words(block.items.join(" "));
+        return n;
+      }, 0);
+      return {
+        id: card.id || `${slug}--curated-${index + 1}`,
+        article: slug,
+        title: String(card.title ?? "").trim(),
+        section: card.section || null,
+        anchor: card.anchor || "",
+        part: index + 1,
+        parts: cards.length,
+        lead: null,
+        type: card.type || null,
+        takeaway: card.takeaway || null,
+        blocks,
+        words: wordCount,
+        kind: "insight",
+      };
+    })
+    .filter((card) => card.title && card.blocks.length)
+    .map((card, index, all) => ({ ...card, part: index + 1, parts: all.length }));
+}
+
 const DROP_SECTIONS =
   /^(footnotes?|references?|bibliography|credits?|further reading|sources?|prerequisites?|conclusion|summary|wrapping up)$/i;
 
@@ -600,7 +653,9 @@ for (const file of files.sort()) {
     blocks.push({ ...block, section, anchor });
   });
 
-  const articleIdeas = insightsFor(article, blocks);
+  const articleIdeas = curated[slug]?.length
+    ? normaliseCurated(slug, curated[slug])
+    : insightsFor(article, blocks);
 
   // A few short, heading-less essays have no sentence that clears the normal
   // claim bar. Still give them one honest card instead of dropping the essay.

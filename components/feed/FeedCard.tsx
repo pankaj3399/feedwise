@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import type { Article, Idea } from "@/lib/types";
 import { categoryOf } from "@/lib/categories";
+import { insightTypeOf } from "@/lib/insightTypes";
 import { cn, readingTime, relativeDate } from "@/lib/utils";
 import { Blocks } from "./Blocks";
 import { CardGlyph } from "./CardGlyph";
@@ -72,6 +73,7 @@ export function FeedCard({
   showHint?: boolean;
 }) {
   const category = categoryOf(article.category);
+  const insightType = insightTypeOf(idea.type);
   const [bursts, setBursts] = useState<{ id: number; x: number; y: number }[]>([]);
   const [hint, setHint] = useState(showHint);
   const lastTap = useRef(0);
@@ -122,7 +124,13 @@ export function FeedCard({
           {category.short}
         </span>
         <span className="text-white/15">/</span>
-        <span className="text-muted">{readingTime(idea.words)} min</span>
+        {insightType ? (
+          <span className="font-semibold" style={{ color: insightType.color }}>
+            {insightType.label}
+          </span>
+        ) : (
+          <span className="text-muted">{readingTime(idea.words)} min</span>
+        )}
         <span className="text-white/15">/</span>
         <span className="text-muted">{relativeDate(article.date)}</span>
         {idea.parts > 1 ? (
@@ -161,11 +169,22 @@ export function FeedCard({
         </p>
       </div>
 
+      {idea.takeaway ? (
+        <p className="relative mt-3 shrink-0 border-l-2 border-lime/40 pl-3 text-[12px] leading-relaxed text-cream/65">
+          <span className="font-semibold text-lime/90">Why it matters · </span>
+          {idea.takeaway}
+        </p>
+      ) : null}
+
       <div
         onPointerUp={handlePointerUp}
         className="relative mt-4 min-h-0 flex-1 select-text overflow-hidden"
       >
-        <Blocks blocks={idea.blocks} preview />
+        <Blocks
+          blocks={idea.blocks}
+          preview
+          variant={idea.type === "action" ? "action" : "default"}
+        />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-ink via-ink/85 to-transparent" />
         {hint ? (
           <div className="animate-fade-in pointer-events-none absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-white/10 bg-black/55 px-3 py-1.5 text-[10px] text-cream/70 backdrop-blur-md">

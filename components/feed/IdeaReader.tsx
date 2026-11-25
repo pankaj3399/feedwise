@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { Article, Idea } from "@/lib/types";
 import { categoryOf } from "@/lib/categories";
+import { insightTypeOf } from "@/lib/insightTypes";
 import { readingTime, relativeDate } from "@/lib/utils";
 import { Blocks } from "./Blocks";
 import { Sheet } from "@/components/ui/Sheet";
@@ -48,6 +49,7 @@ export function IdeaReader({
   onOpenRelated: (idea: Idea) => void;
 }) {
   const category = categoryOf(article.category);
+  const insightType = insightTypeOf(idea.type);
   const [selected, setSelected] = useState<string | null>(null);
   const [noteOpen, setNoteOpen] = useState(false);
   const [note, setNote] = useState("");
@@ -157,12 +159,32 @@ export function IdeaReader({
             From <span className="text-cream/70">{article.title}</span> by Arpit Bhayani
           </p>
 
+          {insightType ? (
+            <span
+              className="mt-4 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em]"
+              style={{ color: insightType.color, background: insightType.soft }}
+            >
+              <span className="size-1.5 rounded-full" style={{ background: insightType.color }} />
+              {insightType.label}
+            </span>
+          ) : null}
+
+          {idea.takeaway ? (
+            <p className="mt-4 border-l-2 border-lime/40 pl-4 text-[14px] leading-relaxed text-cream/75">
+              <span className="font-semibold text-lime/90">Why it matters · </span>
+              {idea.takeaway}
+            </p>
+          ) : null}
+
           <div
-            className="mt-7 select-text"
+            className="mt-6 select-text"
             onMouseUp={captureSelection}
             onTouchEnd={captureSelection}
           >
-            <Blocks blocks={idea.blocks} />
+            <Blocks
+              blocks={idea.blocks}
+              variant={idea.type === "action" ? "action" : "default"}
+            />
           </div>
 
           <a
