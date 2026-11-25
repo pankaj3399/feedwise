@@ -30,6 +30,12 @@ export type Idea = {
   type?: InsightType | null;
   /** One-line reason the idea is worth knowing. */
   takeaway?: string | null;
+  /** What the idea was part of: the experiment, essay series or system. */
+  context?: string | null;
+  /** How it was actually implemented or how to apply it. */
+  how?: string | null;
+  /** Practical steps the reader can follow. */
+  steps?: string[] | null;
   /** Essay section the insight came from, when it has one. */
   section?: string | null;
 };

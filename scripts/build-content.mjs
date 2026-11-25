@@ -9,18 +9,25 @@ await fs.mkdir(OUT, { recursive: true });
 // Hand-written, editorially typed cards. When an essay is present here, its
 // curated cards replace the mechanical extraction for that essay.
 const curated = {};
+const curatedDetails = {};
 try {
   const raw = JSON.parse(await fs.readFile(path.join(OUT, "curated.json"), "utf8"));
   for (const card of raw) {
     (curated[card.article] ||= []).push(card);
   }
+  const details = JSON.parse(
+    await fs.readFile(path.join(OUT, "curated-details.json"), "utf8"),
+  );
+  Object.assign(curatedDetails, details);
 } catch {
   // No curated overlay yet; every essay falls back to extraction.
 }
 
 function normaliseCurated(slug, cards) {
+  const essayDetails = curatedDetails[slug] ?? {};
   return cards
     .map((card, index) => {
+      const detail = essayDetails.cards?.[card.id] ?? {};
       const blocks = (card.blocks ?? [])
         .map((block) => {
           if (block.type === "p") {
@@ -50,6 +57,9 @@ function normaliseCurated(slug, cards) {
         lead: null,
         type: card.type || null,
         takeaway: card.takeaway || null,
+        context: detail.context || essayDetails.context || null,
+        how: detail.how || null,
+        steps: Array.isArray(detail.steps) ? detail.steps : null,
         blocks,
         words: wordCount,
         kind: "insight",

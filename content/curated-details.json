@@ -1,0 +1,313 @@
+{
+  "compiling-an-sop-into-a-3b-model": {
+    "context": "Part of a holiday experiment that compiled an incident-triage SOP into a 3B model. The code is at arpitbbhayani/workflow-slm.",
+    "cards": {
+      "compiling-an-sop-into-a-3b-model--curated-1": {
+        "how": "QLoRA-tuned Qwen2.5-3B-Instruct: 4-bit NF4 quantization, LoRA r=16 and alpha=32 on all linear layers, three epochs, under four hours on one RTX 3060. The 115 MB adapter replaced a 3,500-token SOP in the system prompt.",
+        "steps": [
+          "Pick a workflow that is a stable finite state machine.",
+          "Build a deterministic simulator with known root causes.",
+          "Generate multi-turn traces with an oracle and validate them.",
+          "Fine-tune a small model with QLoRA and masked loss.",
+          "Evaluate on held-out scenarios against a frontier model."
+        ]
+      },
+      "compiling-an-sop-into-a-3b-model--curated-2": {
+        "how": "Count the SOP tokens that are resent on every turn, not just the one-time prompt size. A 3,500-token SOP over five turns is about 5,200 input tokens per request.",
+        "steps": [
+          "Measure the current prompt size per turn.",
+          "Multiply it by the average number of turns per task.",
+          "Compare that recurring cost with compiling or caching the procedure."
+        ]
+      },
+      "compiling-an-sop-into-a-3b-model--curated-3": {
+        "how": "Move the procedure out of the prompt and into an adapter. The system prompt becomes a versioned trigger such as `incident_triage_v1`; the weights carry the state machine.",
+        "steps": [
+          "Define a stable, versioned trigger name.",
+          "Train the adapter on the full procedure and its tool calls.",
+          "At inference, send only the trigger plus the current input and tools.",
+          "Version the adapter when the procedure changes."
+        ]
+      },
+      "compiling-an-sop-into-a-3b-model--curated-4": {
+        "how": "In the dataset collator, label user alerts, system triggers and tool responses with `-100`, so the loss is computed only on assistant actions.",
+        "steps": [
+          "Identify the assistant-action spans in every trace.",
+          "Set every other token label to -100.",
+          "Verify that gradients only flow through decisions.",
+          "Compare with an unmasked baseline to confirm the difference."
+        ]
+      },
+      "compiling-an-sop-into-a-3b-model--curated-5": {
+        "how": "A deterministic simulator with 12 microservices and 9 root causes, plus an oracle that knows the optimal path, generated 5,116 multi-turn conversations; every trace passed eight programmatic checks."
+      },
+      "compiling-an-sop-into-a-3b-model--curated-6": {
+        "how": "Prompts are editable at runtime; compiled weights require retraining or a new adapter version. Use compilation only when the procedure is stable and high-volume.",
+        "steps": [
+          "Estimate how often the workflow changes.",
+          "If it changes weekly, keep it in the prompt.",
+          "If it is stable and high-volume, compile it.",
+          "Keep a versioned fallback prompt for edge cases."
+        ]
+      }
+    }
+  },
+  "slop-debt": {
+    "context": "From an essay on how LLM-generated codebases fail. It is the author's observation, not a formal study.",
+    "cards": {
+      "slop-debt--curated-1": {
+        "how": "Audit how much of the codebase was generated without a human architectural decision, and whether anyone can explain why it has that shape.",
+        "steps": [
+          "Sample recent merged pull requests.",
+          "Ask who chose the structure, not just who approved it.",
+          "Look for locally correct but globally inconsistent patterns.",
+          "Measure incoherence, not just volume."
+        ]
+      },
+      "slop-debt--curated-2": {
+        "how": "For any piece of debt, ask what decision produced it. If no decision exists, it is slop.",
+        "steps": [
+          "Pick a confusing module.",
+          "Trace it to a design decision or a person.",
+          "If neither exists, classify it as slop.",
+          "Use the distinction to decide whether to refactor or rewrite."
+        ]
+      },
+      "slop-debt--curated-3": {
+        "how": "The model reads the existing code as context on every generation pass, so inconsistent patterns become the examples it copies.",
+        "steps": [
+          "Check whether generated code is used as context for later generation.",
+          "Look for the same problem solved multiple ways.",
+          "Add a human-owned architectural reference before more generation.",
+          "Stop generation passes that learn from unreviewed slop."
+        ]
+      },
+      "slop-debt--curated-4": {
+        "how": "A diff-level review catches local mistakes; slop is globally inconsistent but locally plausible, so it passes review.",
+        "steps": [
+          "Review for fit with existing patterns, not just correctness.",
+          "Ask why this shape was chosen.",
+          "Compare against a reference architecture.",
+          "Use a human architectural review for generated modules."
+        ]
+      },
+      "slop-debt--curated-5": {
+        "how": "Slop is spread across the codebase at low intensity, so cleaning one module does not change the system's overall shape.",
+        "steps": [
+          "Map where the incoherence is concentrated.",
+          "Check whether neighboring modules are still generating new patterns.",
+          "Decide whether incremental refactoring can change the system's shape.",
+          "Escalate to a rewrite if it cannot."
+        ]
+      },
+      "slop-debt--curated-6": {
+        "how": "A human-owned rewrite: define the target architecture first, then use the model inside that shape."
+      }
+    }
+  },
+  "ai-first-org": {
+    "context": "From an essay on how AI-first engineering orgs change planning, review, hiring and metrics.",
+    "cards": {
+      "ai-first-org--curated-1": {
+        "how": "Measure where engineering time goes after coding gets faster; the gating step is the new bottleneck.",
+        "steps": [
+          "Measure where engineering time goes now.",
+          "Identify the step that gates delivery.",
+          "Redesign process around verification, not typing."
+        ]
+      },
+      "ai-first-org--curated-2": {
+        "how": "Run planning as a just-in-time decision: prototype first, get user feedback, and write a doc only when reversal is expensive."
+      },
+      "ai-first-org--curated-3": {
+        "how": "Before asking a person, ask the model to gather context from git history, CODEOWNERS, recent commits and the PR discussion."
+      },
+      "ai-first-org--curated-4": {
+        "how": "Split review by reversibility and judgment: AI owns style, bugs and tests; humans own security, legal and product risk.",
+        "steps": [
+          "Ask whether a wrong call is expensive to reverse.",
+          "Ask whether it needs risk-tolerance judgment.",
+          "If both answers are no, skip the human gate.",
+          "Revisit the split monthly as models improve."
+        ]
+      },
+      "ai-first-org--curated-5": {
+        "how": "Hire for the two profiles that remain scarce: product-minded builders and engineers with deep systems expertise.",
+        "steps": [
+          "Define the systems constraints the model cannot handle.",
+          "Look for product sense in builders.",
+          "Test for judgment, not raw coding throughput."
+        ]
+      },
+      "ai-first-org--curated-6": {
+        "how": "Track AI-assisted commit percentage as an activity metric, never as the outcome.",
+        "steps": [
+          "Track onboarding ramp time.",
+          "Track pull-request cycle time.",
+          "Track the share of AI-assisted commits.",
+          "Pair them with retention, incidents or adoption."
+        ]
+      },
+      "ai-first-org--curated-7": {
+        "how": "Pick the workflow the team dreads most and ask whether it still closes the gap it was created for."
+      }
+    }
+  },
+  "three-skills": {
+    "context": "From a proposal for three org-level Claude skills: create-service, deploy and debug.",
+    "cards": {
+      "three-skills--curated-1": {
+        "how": "Compare a stale doc with a broken tool: the doc fails silently, the tool fails in front of the next user and gets fixed.",
+        "steps": [
+          "Find a doc that is known to be stale.",
+          "Replace the critical path with an executable check.",
+          "Let the failure surface in the workflow."
+        ]
+      },
+      "three-skills--curated-2": {
+        "how": "The three skills are the repeated org workflows: create a service, deploy and roll back, debug an incident.",
+        "steps": [
+          "List the three workflows in your org.",
+          "Identify where people wait or guess.",
+          "Encode the repeated parts as tools."
+        ]
+      },
+      "three-skills--curated-3": {
+        "how": "Start with debugging because incidents create immediate, verifiable demand for the tool."
+      },
+      "three-skills--curated-4": {
+        "how": "Build deployment with the rollback path exercised as often as the forward path."
+      },
+      "three-skills--curated-5": {
+        "how": "Create-service touches the most infrastructure, so a half-built version relocates confusion instead of removing it.",
+        "steps": [
+          "Map the provisioning steps.",
+          "Automate database, logging, identity and deploy.",
+          "Ship it only when the full path works end to end."
+        ]
+      },
+      "three-skills--curated-6": {
+        "how": "Pick one metric per tool that is cheap to measure and hard to argue with.",
+        "steps": [
+          "Create-service: time from repo to live deployment.",
+          "Deploy: deployment frequency plus rollback rate.",
+          "Debug: mean time to diagnose an incident."
+        ]
+      }
+    }
+  },
+  "g-eval": {
+    "context": "From an explainer on the 2023 G-Eval paper by Yang Liu and coauthors at Microsoft.",
+    "cards": {
+      "g-eval--curated-1": {
+        "how": "Combine a precise rubric, a model-generated chain-of-thought, and token-probability scoring.",
+        "steps": [
+          "Define the evaluation dimension.",
+          "Generate the evaluation steps.",
+          "Score with token probabilities.",
+          "Calibrate against human labels."
+        ]
+      },
+      "g-eval--curated-2": {
+        "how": "Use G-Eval when there is no gold reference; define the criterion and let the judge evaluate against it.",
+        "steps": [
+          "Check whether a reference answer exists.",
+          "If not, write a precise criterion.",
+          "Use a reference-free judge."
+        ]
+      },
+      "g-eval--curated-3": {
+        "how": "Replace the vague 1–5 prompt with a concrete definition of the dimension and what a good output looks like.",
+        "steps": [
+          "Write a one-paragraph rubric.",
+          "Define each score level concretely.",
+          "Test it on known good and bad outputs."
+        ]
+      },
+      "g-eval--curated-4": {
+        "how": "Generate the chain-of-thought once per rubric, cache it, and reuse it for every candidate.",
+        "steps": [
+          "Generate evaluation steps from the rubric.",
+          "Cache them per rubric version.",
+          "Score each candidate with the cached steps.",
+          "Read the chain-of-thought when a score looks wrong."
+        ]
+      },
+      "g-eval--curated-5": {
+        "how": "Use a judge from a different model family than the system under test; pin its version and recalibrate.",
+        "steps": [
+          "Identify the model family under test.",
+          "Choose a judge from another family.",
+          "Pin the judge version.",
+          "Recalibrate against human labels."
+        ]
+      },
+      "g-eval--curated-6": {
+        "how": "Use a classifier or parser for a closed-form check; reserve G-Eval for open-ended judgment.",
+        "steps": [
+          "Classify the check as closed-form or open-ended.",
+          "Use a parser or classifier for the former.",
+          "Use G-Eval only for the latter."
+        ]
+      }
+    }
+  },
+  "ai-topological-sort": {
+    "context": "From an essay on modeling AI workflows and multi-agent systems as DAGs.",
+    "cards": {
+      "ai-topological-sort--curated-1": {
+        "how": "Model the workflow as a DAG: tasks are nodes, dependencies are edges, and the topological order is the schedule.",
+        "steps": [
+          "List the tasks.",
+          "Draw every dependency edge.",
+          "Check for cycles.",
+          "Compute the topological order."
+        ]
+      },
+      "ai-topological-sort--curated-2": {
+        "how": "Treat an edge as a correctness constraint: the consumer cannot run before the producer finishes.",
+        "steps": [
+          "For each edge, name what breaks if it is reversed.",
+          "If nothing breaks, question the edge.",
+          "If data is stale or missing, keep it."
+        ]
+      },
+      "ai-topological-sort--curated-3": {
+        "how": "Group nodes by topological level and run each level concurrently.",
+        "steps": [
+          "Compute the DAG levels.",
+          "Dispatch each level in parallel.",
+          "Join at the merge node."
+        ]
+      },
+      "ai-topological-sort--curated-4": {
+        "how": "On failure, traverse forward from the affected node and reuse cached outputs outside its subgraph.",
+        "steps": [
+          "Mark the affected node.",
+          "Traverse its descendants.",
+          "Recompute only that subgraph.",
+          "Reuse every other cache entry."
+        ]
+      },
+      "ai-topological-sort--curated-5": {
+        "how": "Topological sort gives order, not load balance; profile the critical path and fan-in nodes.",
+        "steps": [
+          "Find the longest dependency chain.",
+          "Find high fan-in merge nodes.",
+          "Measure where the schedule actually waits."
+        ]
+      },
+      "ai-topological-sort--curated-6": {
+        "how": "If the topological order is shorter than the node count, a cycle exists; reject the workflow at definition time."
+      },
+      "ai-topological-sort--curated-7": {
+        "how": "Treat the dependency graph as the spec and the topological order as the scheduler input.",
+        "steps": [
+          "Draw the graph before writing orchestration code.",
+          "Separate sequential tasks from independent ones.",
+          "Let parallelism and incremental recomputation fall out of the graph."
+        ]
+      }
+    }
+  }
+}

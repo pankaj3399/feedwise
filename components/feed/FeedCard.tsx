@@ -198,7 +198,8 @@ export function FeedCard({
         onClick={onOpen}
         className="tap relative mt-3 inline-flex shrink-0 items-center gap-1.5 self-start rounded-full border border-white/10 bg-white/[0.035] px-3.5 py-1.5 text-[11px] font-medium text-cream/80 hover:border-white/20 hover:bg-white/[0.06]"
       >
-        Read this idea <ArrowRight size={12} />
+        {idea.how || idea.steps?.length ? "See the breakdown" : "Read this idea"}{" "}
+        <ArrowRight size={12} />
       </button>
 
       <div className="relative mt-2 flex items-end gap-0.5 border-t border-white/[0.06] pt-2">

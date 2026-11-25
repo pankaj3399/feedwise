@@ -187,6 +187,46 @@ export function IdeaReader({
             />
           </div>
 
+          {idea.how ? (
+            <section className="mt-7 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-lime/80">
+                {idea.type === "result"
+                  ? "How it was done"
+                  : idea.type === "action"
+                    ? "How to do it"
+                    : "How to apply it"}
+              </p>
+              <p className="mt-2 text-[13.5px] leading-relaxed text-cream/75">{idea.how}</p>
+            </section>
+          ) : null}
+
+          {idea.steps?.length ? (
+            <section className="mt-6">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">
+                Try it yourself
+              </p>
+              <ol className="mt-3 space-y-3">
+                {idea.steps.map((step, index) => (
+                  <li
+                    key={`${idea.id}-step-${index}`}
+                    className="flex gap-3 text-[13.5px] leading-relaxed text-cream/75"
+                  >
+                    <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-lime/10 text-[10px] font-semibold text-lime">
+                      {index + 1}
+                    </span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          ) : null}
+
+          {idea.context ? (
+            <p className="mt-6 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3 text-[11px] leading-relaxed text-muted">
+              {idea.context}
+            </p>
+          ) : null}
+
           <a
             href={`${article.url}${idea.anchor ? `#${idea.anchor}` : ""}`}
             target="_blank"
