@@ -16,7 +16,9 @@ export type Idea = {
   lead: string | null;
   blocks: Block[];
   words: number;
-  kind: "intro" | "section";
+  kind: "intro" | "section" | "insight";
+  /** Essay section the insight came from, when it has one. */
+  section?: string | null;
 };
 
 export type Article = {

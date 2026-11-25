@@ -2,13 +2,14 @@
 
 **doomscroll, but wiser.**
 
-Feedwise is a small, installable reading app that replaces the reflex scroll with an endless feed of atomic ideas. Every card is one self-contained insight extracted from the 112 engineering essays on [arpitbhayani.me](https://arpitbhayani.me/blogs/) — 1,125 ideas in total — with streaks, XP, recall quizzes, saved ideas, collections, highlights and notes on top.
+Feedwise is a small, installable reading app that replaces the reflex scroll with an endless feed of atomic ideas. Every card is one self-contained insight pulled from the 112 engineering essays on [arpitbhayani.me](https://arpitbhayani.me/blogs/) — around 600 insights in total — with streaks, XP, recall quizzes, saved ideas, collections, highlights and notes on top.
 
 > Feedwise is an independent, personal reading layer. All ideas and words belong to Arpit Bhayani; every card links back to the original essay. It is not affiliated with the author.
 
 ## What's inside
 
 - **An endless, swipe-style feed** of one-idea cards. Feed order is deterministic per user and per day, so it stays stable while you read, and likes/saves never reshuffle it.
+- **Latest tab** for a strict newest-essay-first read, plus category tabs. Inside `For you`, each essay's insights stay together and in order, so a run of cards reads like the argument of the essay instead of loose paragraphs.
 - **Email + password auth** with hashed passwords (`bcryptjs`) and database-backed sessions in an httpOnly cookie.
 - **Daily goal + streak** with a progress ring, a 7-day chart and a 28-day heatmap.
 - **XP, levels and topic mastery** across five topics: distributed systems, algorithms, systems internals, AI systems and career growth.
@@ -75,11 +76,12 @@ pnpm content         # both of the above
 
 How the extraction works:
 
-- Each essay is split on `h2`/`h3` headings and then into paragraph, list, quote, code and table blocks.
-- Sections are packed into cards of roughly 90–270 words, so every card is a complete thought.
-- KaTeX markup is collapsed back to its TeX source and stored inline between backticks.
-- Footnotes, images and navigation chrome are dropped; short/duplicate sections are merged.
-- Quiz questions are generated as cloze deletions from sentences that contain exactly one number or one inline-code term, with distractors drawn from the same article/topic.
+- Each essay is read as the author wrote it: `h2` sections and paragraphs, plus lists, quotes, code and tables.
+- A card is **one paragraph, not one arbitrary word-count chunk**. The strongest self-contained claim in the paragraph becomes the headline; the rest of the paragraph (and a short list, when it belongs to the same thought) becomes the explanation.
+- If no sentence in a paragraph is a clean, standalone claim, the authored section heading is used as the headline instead. This is why some cards read as a topic and others as a claim — both stay grammatical, and the body always carries the insight.
+- Admin scaffolding is dropped: meta descriptions, "in this essay" preambles, prerequisites, conclusions, footnotes, images and navigation chrome.
+- KaTeX markup is collapsed back to its TeX source and stored inline between backticks. Code-heavy walkthroughs stay in the reader and are never used as a headline.
+- Quiz questions are generated from the full essay text, not just the cards, so tightening the cards does not shrink the quiz bank; each answer is a cloze over one number or one inline-code term, with distractors drawn from the same article/topic.
 
 Regenerate the app icons with `pnpm icons` (requires the committed `sharp` dev dependency).
 
@@ -100,7 +102,7 @@ lib/
   db.ts             dual-driver Postgres/PGlite access + schema
   auth.ts           signup, login, session tokens, cookies
   state.ts          reads, likes, saves, highlights, stats, quiz selection
-  feed.ts           deterministic feed ranking and category interleaving
+  feed.ts           deterministic feed ranking, essay grouping and category interleaving
   content.ts        server-side access to the generated content
 content/            generated feed + quiz bank (committed)
 public/             manifest icons, service worker, data bundle

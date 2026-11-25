@@ -1,5 +1,5 @@
 /* Feedwise service worker — offline shell + cached library, no API caching. */
-const VERSION = "feedwise-v1";
+const VERSION = "feedwise-v2";
 const SHELL = `${VERSION}-shell`;
 const DATA = `${VERSION}-data`;
 const ASSETS = `${VERSION}-assets`;

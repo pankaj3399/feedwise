@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles, Users } from "lucide-react";
+import { Clock3, Sparkles, Users } from "lucide-react";
 import { CATEGORIES } from "@/lib/categories";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +13,7 @@ export function TopicTabs({
 }) {
   const tabs = [
     { id: "for-you", label: "For you", icon: Sparkles, color: "#D8FF5F" },
+    { id: "latest", label: "Latest", icon: Clock3, color: "#D8FF5F" },
     { id: "following", label: "Following", icon: Users, color: "#F4F1E8" },
     ...CATEGORIES.map((category) => ({
       id: category.slug,

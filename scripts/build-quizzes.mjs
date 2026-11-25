@@ -1,9 +1,30 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-const DIR = path.join(import.meta.dirname, "..", "content");
+const ROOT = path.join(import.meta.dirname, "..");
+const DIR = path.join(ROOT, "content");
 const feed = JSON.parse(await fs.readFile(path.join(DIR, "feed.json"), "utf8"));
 const { articles, ideas } = feed;
+
+let corpus;
+try {
+  corpus = JSON.parse(await fs.readFile(path.join(ROOT, ".cache", "corpus.json"), "utf8"));
+} catch {
+  // Fallback for a feed.json produced by an older build.
+  corpus = {};
+  for (const [slug, article] of Object.entries(articles)) {
+    corpus[slug] = {
+      title: article.title,
+      date: article.date,
+      category: article.category,
+      categoryLabel: article.categoryLabel,
+      blocks: ideas
+        .filter((idea) => idea.article === slug)
+        .flatMap((idea) => idea.blocks)
+        .filter((block) => block.type === "p"),
+    };
+  }
+}
 
 const STOP = new Set(
   `key value id ids next get list text index node nodes item items data name type self return true false none null for if else in is and or not the a an of to on at by with this that it its be as from into than then so we you i our your they their`.split(
@@ -34,8 +55,27 @@ const sentences = (text) =>
 
 const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "");
 
+const paragraphs = [];
+for (const [slug, entry] of Object.entries(corpus)) {
+  for (const block of entry.blocks) {
+    if (block.type === "p") {
+      paragraphs.push({ article: slug, section: block.section ?? null, text: block.text });
+    }
+  }
+}
+
 const byArticle = {};
-for (const idea of ideas) (byArticle[idea.article] ||= []).push(idea);
+for (const paragraph of paragraphs) (byArticle[paragraph.article] ||= []).push(paragraph);
+
+const firstIdea = {};
+const ideaBySection = {};
+for (const idea of ideas) {
+  firstIdea[idea.article] ||= idea.id;
+  if (idea.section) {
+    const key = `${idea.article}::${idea.section}`;
+    ideaBySection[key] ||= idea.id;
+  }
+}
 
 function termShape(t) {
   if (/^[A-Z][A-Za-z0-9]*$/.test(t)) return "camel";
@@ -55,7 +95,7 @@ function termScore(t, article) {
     return inTitle || inTopics ? 1 : -2;
   }
   if (shape === "other") return -1;
-  if (/^[a-z]-?\d{2,}$/i.test(t)) return -5; // random ids
+  if (/^[a-z]-?\d{2,}$/i.test(t)) return -5;
   if (/^[a-z]+$/i.test(t) && t.length <= 4) return -2;
   let score = 2;
   if (t.length >= 5) score += 1;
@@ -65,24 +105,22 @@ function termScore(t, article) {
 }
 
 const allTerms = [];
-for (const idea of ideas) {
-  for (const b of idea.blocks) {
-    if (b.type !== "p") continue;
-    for (const m of b.text.matchAll(/`([^`]{2,40})`/g)) {
-      const t = m[1].trim();
-      if (!t || STOP.has(t.toLowerCase())) continue;
-      allTerms.push({
-        term: t,
-        shape: termShape(t),
-        category: articles[idea.article].category,
-        article: idea.article,
-      });
-    }
+for (const paragraph of paragraphs) {
+  for (const m of paragraph.text.matchAll(/`([^`]{2,40})`/g)) {
+    const t = m[1].trim();
+    if (!t || STOP.has(t.toLowerCase())) continue;
+    allTerms.push({
+      term: t,
+      shape: termShape(t),
+      category: articles[paragraph.article].category,
+      article: paragraph.article,
+    });
   }
 }
 
 const questions = [];
 const usedSentences = new Set();
+const usedQuestions = new Set();
 
 function shuffleOptions(correct, distractors, id) {
   const uniq = [...new Set([correct, ...distractors])];
@@ -122,83 +160,82 @@ for (const [slug, list] of Object.entries(byArticle)) {
   const article = articles[slug];
   const candidates = [];
 
-  for (const idea of list) {
-    for (const b of idea.blocks) {
-      if (b.type !== "p") continue;
-      for (const sentence of sentences(b.text)) {
-        if (sentence.length < 65 || sentence.length > 260) continue;
-        if (/https?:\/\//.test(sentence)) continue;
-        if (/[:;,\-–—]$/.test(sentence)) continue;
-        if (/\b(figure|illustration|shown above|shown below|image above)\b/i.test(sentence)) continue;
-        if (usedSentences.has(norm(sentence))) continue;
+  for (const paragraph of list) {
+    const ideaId =
+      (paragraph.section && ideaBySection[`${slug}::${paragraph.section}`]) || firstIdea[slug];
+    if (!ideaId) continue;
 
-        // numeric cloze
-        numberRe.lastIndex = 0;
-        const nums = [...sentence.matchAll(numberRe)];
-        if (
-          nums.length === 1 &&
-          !/`/.test(sentence) &&
-          !FIRST_PERSON.test(sentence) &&
-          !sentence.includes("=") &&
-          quantityContext.test(sentence)
-        ) {
-          const m = nums[0];
-          const value = m[1];
-          const unit = m[2];
-          if (!(value === "1" && /^(x|times?)$/.test(unit))) {
-            const answer = fmtNum(parseFloat(value), unit);
-            const ds = numberDistractors(value, unit);
-            if (ds.length >= 3) {
-              candidates.push({
-                kind: "number",
-                ideaId: idea.id,
-                sentence,
-                answer,
-                distractors: ds.slice(0, 3),
-                weight: 4,
-              });
-              continue;
-            }
-          }
-        }
+    for (const sentence of sentences(paragraph.text)) {
+      if (sentence.length < 65 || sentence.length > 260) continue;
+      if (/https?:\/\//.test(sentence)) continue;
+      if (/[:;,\-–—]$/.test(sentence)) continue;
+      if (/\b(figure|illustration|shown above|shown below|image above)\b/i.test(sentence)) continue;
+      if (usedSentences.has(norm(sentence))) continue;
 
-        // inline-code cloze
-        const codes = [...sentence.matchAll(/`([^`]+)`/g)];
-        if (codes.length === 1 && !FIRST_PERSON.test(sentence)) {
-          const term = codes[0][1].trim();
-          if (term.length < 2 || term.length > 28) continue;
-          if (STOP.has(term.toLowerCase())) continue;
-          if (term.startsWith("\\")) continue;
-          if (/^[\s.,;:!?]+$/.test(term) || /^\d+$/.test(term)) continue;
-          const shape = termShape(term);
-          if (termScore(term, article) < 0) continue;
-          if (shape === "word" && termScore(term, article) < 0) continue;
-
-          const pick = (pool) =>
-            [...new Set(pool)]
-              .filter((t) => norm(t) !== norm(term))
-              .filter((t) => !norm(t).includes(norm(term)) && !norm(term).includes(norm(t)))
-              .filter((t) => t.length >= term.length * 0.4 && t.length <= term.length * 1.9);
-          const sameShape = (t) => termShape(t) === shape;
-          const articleTerms = allTerms.filter((x) => x.article === slug).map((x) => x.term);
-          const catTerms = allTerms.filter((x) => x.category === article.category).map((x) => x.term);
-
-          let ds = pick(articleTerms.filter(sameShape));
-          if (ds.length < 3) ds = [...ds, ...pick(catTerms.filter(sameShape))];
-          if (ds.length < 3) ds = [...ds, ...pick(articleTerms)];
-          if (ds.length < 3) ds = [...ds, ...pick(catTerms)];
-          ds = [...new Set(ds)].slice(0, 3);
-
+      numberRe.lastIndex = 0;
+      const nums = [...sentence.matchAll(numberRe)];
+      if (
+        nums.length === 1 &&
+        !/`/.test(sentence) &&
+        !FIRST_PERSON.test(sentence) &&
+        !sentence.includes("=") &&
+        quantityContext.test(sentence)
+      ) {
+        const m = nums[0];
+        const value = m[1];
+        const unit = m[2];
+        if (!(value === "1" && /^(x|times?)$/.test(unit))) {
+          const answer = fmtNum(parseFloat(value), unit);
+          const ds = numberDistractors(value, unit);
           if (ds.length >= 3) {
             candidates.push({
-              kind: "code",
-              ideaId: idea.id,
+              kind: "number",
+              ideaId,
               sentence,
-              answer: term,
-              distractors: ds,
-              weight: 3 + Math.max(0, termScore(term, article)),
+              answer,
+              distractors: ds.slice(0, 3),
+              weight: 4,
             });
+            continue;
           }
+        }
+      }
+
+      const codes = [...sentence.matchAll(/`([^`]+)`/g)];
+      if (codes.length === 1 && !FIRST_PERSON.test(sentence)) {
+        const term = codes[0][1].trim();
+        if (term.length < 2 || term.length > 28) continue;
+        if (STOP.has(term.toLowerCase())) continue;
+        if (term.startsWith("\\")) continue;
+        if (/^[\s.,;:!?]+$/.test(term) || /^\d+$/.test(term)) continue;
+        const shape = termShape(term);
+        if (termScore(term, article) < 0) continue;
+        if (shape === "word" && termScore(term, article) < 0) continue;
+
+        const pick = (pool) =>
+          [...new Set(pool)]
+            .filter((t) => norm(t) !== norm(term))
+            .filter((t) => !norm(t).includes(norm(term)) && !norm(term).includes(norm(t)))
+            .filter((t) => t.length >= term.length * 0.4 && t.length <= term.length * 1.9);
+        const sameShape = (t) => termShape(t) === shape;
+        const articleTerms = allTerms.filter((x) => x.article === slug).map((x) => x.term);
+        const catTerms = allTerms.filter((x) => x.category === article.category).map((x) => x.term);
+
+        let ds = pick(articleTerms.filter(sameShape));
+        if (ds.length < 3) ds = [...ds, ...pick(catTerms.filter(sameShape))];
+        if (ds.length < 3) ds = [...ds, ...pick(articleTerms)];
+        if (ds.length < 3) ds = [...ds, ...pick(catTerms)];
+        ds = [...new Set(ds)].slice(0, 3);
+
+        if (ds.length >= 3) {
+          candidates.push({
+            kind: "code",
+            ideaId,
+            sentence,
+            answer: term,
+            distractors: ds,
+            weight: 3 + Math.max(0, termScore(term, article)),
+          });
         }
       }
     }
@@ -222,6 +259,8 @@ for (const [slug, list] of Object.entries(byArticle)) {
     usedSentences.add(norm(c.sentence));
     const id = `${slug}-q${idx + 1}`;
     const question = c.sentence.replace(c.answer, "_____").replace(/`_____`/g, "_____");
+    if (usedQuestions.has(norm(question))) return;
+    usedQuestions.add(norm(question));
     const { options, answer } = shuffleOptions(c.answer, c.distractors, id);
     questions.push({
       id,
@@ -239,25 +278,9 @@ for (const [slug, list] of Object.entries(byArticle)) {
 questions.sort((a, b) => (articles[b.article].date || "").localeCompare(articles[a.article].date || ""));
 
 await fs.writeFile(path.join(DIR, "quizzes.json"), JSON.stringify(questions));
-await fs.mkdir(path.join(import.meta.dirname, "..", "public", "data"), { recursive: true });
-await fs.writeFile(path.join(import.meta.dirname, "..", "public", "data", "quizzes.json"), JSON.stringify(questions));
+await fs.mkdir(path.join(ROOT, "public", "data"), { recursive: true });
+await fs.writeFile(path.join(ROOT, "public", "data", "quizzes.json"), JSON.stringify(questions));
 console.log("questions", questions.length, "articles covered", new Set(questions.map((q) => q.article)).size);
 const kinds = {};
 for (const q of questions) kinds[q.kind] = (kinds[q.kind] || 0) + 1;
 console.log(kinds);
-console.log(
-  "\nnumber sample:\n",
-  questions
-    .filter((q) => q.kind === "number")
-    .slice(0, 10)
-    .map((q) => `${q.question}\n  ${q.options.join(" | ")}  ✓ ${q.options[q.answer]}`)
-    .join("\n\n"),
-);
-console.log(
-  "\ncode sample:\n",
-  questions
-    .filter((q) => q.kind === "code")
-    .slice(0, 12)
-    .map((q) => `${q.question}\n  ${q.options.join(" | ")}  ✓ ${q.options[q.answer]}`)
-    .join("\n\n"),
-);

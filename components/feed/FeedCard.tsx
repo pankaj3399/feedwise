@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import type { Article, Idea } from "@/lib/types";
 import { categoryOf } from "@/lib/categories";
-import { cn, readingTime } from "@/lib/utils";
+import { cn, readingTime, relativeDate } from "@/lib/utils";
 import { Blocks } from "./Blocks";
 import { CardGlyph } from "./CardGlyph";
 
@@ -123,6 +123,8 @@ export function FeedCard({
         </span>
         <span className="text-white/15">/</span>
         <span className="text-muted">{readingTime(idea.words)} min</span>
+        <span className="text-white/15">/</span>
+        <span className="text-muted">{relativeDate(article.date)}</span>
         {idea.parts > 1 ? (
           <>
             <span className="text-white/15">/</span>
@@ -142,7 +144,16 @@ export function FeedCard({
       </div>
 
       <div className="relative mt-3 shrink-0">
-        <h2 className="text-balance font-serif text-[clamp(2.05rem,8.4vw,3.15rem)] leading-[0.98] tracking-[-0.022em] text-cream">
+        <h2
+          className={cn(
+            "text-balance font-serif tracking-[-0.022em] text-cream",
+            idea.title.length > 130
+              ? "line-clamp-6 text-[clamp(1.55rem,5.2vw,1.95rem)] leading-[1.1]"
+              : idea.title.length > 82
+                ? "line-clamp-4 text-[clamp(1.95rem,6.8vw,2.45rem)] leading-[1.03]"
+                : "text-[clamp(2.05rem,8.4vw,3.15rem)] leading-[0.98]",
+          )}
+        >
           {idea.title}
         </h2>
         <p className="mt-2.5 line-clamp-1 text-[11px] text-muted/80">

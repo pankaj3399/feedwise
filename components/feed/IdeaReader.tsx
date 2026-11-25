@@ -141,7 +141,16 @@ export function IdeaReader({
             ) : null}
           </div>
 
-          <h1 className="mt-3 text-balance font-serif text-[clamp(2.2rem,9vw,3.4rem)] leading-[0.98] tracking-[-0.02em] text-cream">
+          <h1
+            className={cn(
+              "mt-3 text-balance font-serif tracking-[-0.02em] text-cream",
+              idea.title.length > 130
+                ? "text-[clamp(1.7rem,6.2vw,2.35rem)] leading-[1.1]"
+                : idea.title.length > 82
+                  ? "text-[clamp(2rem,7.2vw,2.8rem)] leading-[1.02]"
+                  : "text-[clamp(2.2rem,9vw,3.4rem)] leading-[0.98]",
+            )}
+          >
             {idea.title}
           </h1>
           <p className="mt-3 text-[12px] text-muted">

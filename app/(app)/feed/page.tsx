@@ -12,12 +12,14 @@ export const metadata: Metadata = { title: "Your feed" };
 export default async function FeedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ topic?: string | string[] }>;
+  searchParams: Promise<{ topic?: string | string[]; mode?: string | string[] }>;
 }) {
   const user = await requireOnboardedUser();
   const params = await searchParams;
   const requested = Array.isArray(params.topic) ? params.topic[0] : params.topic;
   const topic = CATEGORIES.some((category) => category.slug === requested) ? requested : undefined;
+  const requestedMode = Array.isArray(params.mode) ? params.mode[0] : params.mode;
+  const mode = !topic && requestedMode === "latest" ? "latest" : "for-you";
 
   const state = await getUserState(user.id);
   const seed = `${user.id}:${todayIn(user.timezone)}`;
@@ -28,7 +30,7 @@ export default async function FeedPage({
     saved: state.saved,
     interests: state.interests,
     seed: `${seed}:0`,
-    mode: "for-you",
+    mode,
     topic,
   });
 
@@ -40,6 +42,7 @@ export default async function FeedPage({
       quizzes={quizBank}
       seed={seed}
       initialTopic={topic}
+      initialMode={mode === "latest" ? "latest" : undefined}
     />
   );
 }

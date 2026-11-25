@@ -80,6 +80,7 @@ export function FeedClient({
   quizzes,
   seed,
   initialTopic,
+  initialMode,
 }: {
   initialState: UserState;
   initialIdeas: Idea[];
@@ -87,12 +88,13 @@ export function FeedClient({
   quizzes: Quiz[];
   seed: string;
   initialTopic?: string;
+  initialMode?: string;
 }) {
   const { stats, patchStats } = useUser();
   const { toast } = useToast();
 
   const [data, setData] = useState<FeedData | null>(null);
-  const [mode, setMode] = useState(initialTopic ?? "for-you");
+  const [mode, setMode] = useState(initialMode ?? initialTopic ?? "for-you");
   const [topic, setTopic] = useState<string | undefined>(initialTopic);
   const [salt, setSalt] = useState(0);
   const [liked, setLiked] = useState(() => new Set(initialState.liked));
@@ -421,15 +423,24 @@ export function FeedClient({
   );
 
   const refreshFeed = useCallback(() => {
+    if (mode === "latest") {
+      setMode("for-you");
+      setTopic(undefined);
+      window.history.replaceState(null, "", "/feed");
+    }
     setSalt((current) => current + 1);
     toast({ title: "Fresh mix", description: "New order, same good ideas.", tone: "success" });
-  }, [toast]);
+  }, [mode, toast]);
 
   const selectTab = useCallback((id: string) => {
     if (id === "for-you" || id === "following") {
       setMode(id);
       setTopic(undefined);
       window.history.replaceState(null, "", "/feed");
+    } else if (id === "latest") {
+      setMode("latest");
+      setTopic(undefined);
+      window.history.replaceState(null, "", "/feed?mode=latest");
     } else {
       setMode(id);
       setTopic(id);

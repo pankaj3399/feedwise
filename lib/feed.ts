@@ -1,4 +1,4 @@
-import type { FeedData, Idea, Quiz } from "./types";
+import type { Article, FeedData, Idea, Quiz } from "./types";
 import { categoryOf } from "./categories";
 import { rand } from "./utils";
 
@@ -17,6 +17,16 @@ export type FeedEntry =
   | { type: "idea"; idea: Idea }
   | { type: "quiz"; quiz: Quiz };
 
+function articleAgeDays(article: Article, now: number) {
+  const published = new Date(`${article.date}T12:00:00Z`).getTime();
+  if (!Number.isFinite(published)) return 3650;
+  return Math.max(0, (now - published) / 86400000);
+}
+
+/**
+ * Cards are grouped by essay so a run of cards reads like the argument of the
+ * essay, in order, instead of loose paragraphs floating around the feed.
+ */
 export function buildFeed({
   data,
   read = [],
@@ -48,55 +58,76 @@ export function buildFeed({
   }
 
   const now = Date.now();
-  const pool = data.ideas
-    .filter((idea) => {
-      const article = data.articles[idea.article];
-      if (!article) return false;
-      if (topic && article.category !== topic) return false;
-      if (mode === "following" && interests.length) return interestSet.has(article.category);
-      return true;
-    })
-    .map((idea) => {
-      const article = data.articles[idea.article];
-      const cat = article.category;
-      let score = rand(`${seed}:${idea.id}`) * 38;
-      if (readSet.has(idea.id)) score -= 400;
-      else score += 130;
-      if (interestSet.has(cat)) score += 60;
-      score += Math.min(affinity[cat] || 0, 40) * 1.8;
-      if (idea.kind === "intro") score += 4;
-      if (savedSet.has(idea.id)) score += 6;
-      const ageDays = (now - new Date(`${article.date}T12:00:00Z`).getTime()) / 86400000;
-      if (ageDays < 240) score += 14;
-      else if (ageDays < 500) score += 7;
-      return { idea, score };
-    })
-    .sort((a, b) => b.score - a.score)
-    .map((entry) => entry.idea);
+  const grouped = new Map<string, Idea[]>();
 
-  // Interleave categories so the feed does not turn into a wall of one topic.
+  for (const idea of data.ideas) {
+    const article = data.articles[idea.article];
+    if (!article) continue;
+    if (topic && article.category !== topic) continue;
+    if (mode === "following" && interests.length && !interestSet.has(article.category)) continue;
+    const list = grouped.get(idea.article);
+    if (list) list.push(idea);
+    else grouped.set(idea.article, [idea]);
+  }
+
+  const articles = [...grouped.entries()]
+    .map(([slug, list]) => {
+      const article = data.articles[slug];
+      const category = article.category;
+      const age = articleAgeDays(article, now);
+      const recency = Math.exp(-age / 420) * 100;
+      const interest = interestSet.has(category) ? 45 : 0;
+      const affinityBoost = Math.min(affinity[category] || 0, 40) * 1.5;
+      const jitter = rand(`${seed}:${slug}`) * 16;
+      const readCount = list.filter((idea) => readSet.has(idea.id)).length;
+      const readPenalty = (readCount / Math.max(1, list.length)) * 90;
+      const savedBoost = list.filter((idea) => savedSet.has(idea.id)).length * 2;
+      const fresh = rand(`${seed}:fresh:${slug}`) * 3;
+
+      return {
+        article,
+        ideas: list.sort((a, b) => a.part - b.part || a.id.localeCompare(b.id)),
+        score: recency + interest + affinityBoost + jitter + fresh + savedBoost - readPenalty,
+        date: article.date,
+        category,
+      };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  // "Latest" is a straight chronological read: newest essay first, insights in order.
+  if (mode === "latest") {
+    articles.sort((a, b) => b.date.localeCompare(a.date) || a.article.slug.localeCompare(b.article.slug));
+    return articles.flatMap((group) => group.ideas.map((idea) => ({ ...idea })));
+  }
+
+  // Interleave essays by category so the feed does not turn into a wall of one
+  // topic — but never split one essay's insights across the feed.
+  const remaining = [...articles];
   const out: Idea[] = [];
   let lastCategory: string | null = null;
   let run = 0;
-  while (pool.length) {
+
+  while (remaining.length) {
     let pick = -1;
-    for (let i = 0; i < pool.length; i++) {
-      const cat = data.articles[pool[i].article]?.category ?? "other";
-      if (cat !== lastCategory || run < 2) {
+    for (let i = 0; i < remaining.length; i++) {
+      const category = remaining[i].category;
+      if (category !== lastCategory || run < 1) {
         pick = i;
         break;
       }
     }
     if (pick === -1) pick = 0;
-    const [idea] = pool.splice(pick, 1);
-    const cat = data.articles[idea.article]?.category ?? "other";
-    if (cat === lastCategory) run++;
+
+    const [group] = remaining.splice(pick, 1);
+    if (group.category === lastCategory) run++;
     else {
-      lastCategory = cat;
-      run = 1;
+      lastCategory = group.category;
+      run = 0;
     }
-    out.push(idea);
+
+    out.push(...group.ideas);
   }
+
   return out;
 }
 
