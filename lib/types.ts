@@ -13,7 +13,24 @@ export type InsightType =
   | "tradeoff"
   | "failure"
   | "action"
-  | "result";
+  | "result"
+  | "primer"
+  | "outro";
+
+export type GlossaryTerm = {
+  term: string;
+  definition: string;
+  why?: string;
+};
+
+export type EssayArc = {
+  problem: string;
+  terms: GlossaryTerm[];
+  arc: string[];
+  primer: string;
+  outro: string;
+  next: string[];
+};
 
 export type Idea = {
   id: string;
@@ -36,6 +53,12 @@ export type Idea = {
   how?: string | null;
   /** Practical steps the reader can follow. */
   steps?: string[] | null;
+  /** Terms explained by a primer card. */
+  terms?: GlossaryTerm[] | null;
+  /** Reading path shown by a primer card. */
+  arc?: string[] | null;
+  /** Follow-ups shown by an outro card. */
+  next?: string[] | null;
   /** Essay section the insight came from, when it has one. */
   section?: string | null;
 };
@@ -55,6 +78,7 @@ export type FeedData = {
   generatedAt: string;
   articles: Record<string, Article>;
   ideas: Idea[];
+  arcs?: Record<string, EssayArc>;
 };
 
 export type Quiz = {

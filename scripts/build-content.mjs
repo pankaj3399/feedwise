@@ -10,6 +10,12 @@ await fs.mkdir(OUT, { recursive: true });
 // curated cards replace the mechanical extraction for that essay.
 const curated = {};
 const curatedDetails = {};
+const arcs = {};
+try {
+  Object.assign(arcs, JSON.parse(await fs.readFile(path.join(OUT, "arcs.json"), "utf8")));
+} catch {
+  // No explainer arcs yet; essays still render as standalone cards.
+}
 try {
   const raw = JSON.parse(await fs.readFile(path.join(OUT, "curated.json"), "utf8"));
   for (const card of raw) {
@@ -369,6 +375,57 @@ function thoughtUnits(blocks) {
   return units;
 }
 
+function primerCard(slug, arc) {
+  const text = `${arc.problem} ${arc.primer}`.replace(/\s+/g, " ").trim();
+  return {
+    id: `${slug}--primer`,
+    article: slug,
+    title: `Before you start: ${arc.terms.length} ${arc.terms.length === 1 ? "term" : "terms"} this explainer assumes`,
+    type: "primer",
+    takeaway: "The vocabulary you need before the ideas click.",
+    section: "",
+    anchor: "",
+    part: 0,
+    parts: 0,
+    lead: null,
+    terms: arc.terms,
+    arc: arc.arc,
+    how: null,
+    steps: null,
+    blocks: text ? [{ type: "p", text }] : [],
+    words: words(text),
+    kind: "insight",
+  };
+}
+
+function outroCard(slug, arc) {
+  const text = String(arc.outro ?? "").replace(/\s+/g, " ").trim();
+  const blocks = text ? [{ type: "p", text }] : [];
+  if (arc.next?.length) blocks.push({ type: "list", items: arc.next });
+  return {
+    id: `${slug}--outro`,
+    article: slug,
+    title: "Where this leads",
+    type: "outro",
+    takeaway: "What this changes, and what to try next.",
+    section: "",
+    anchor: "",
+    part: 0,
+    parts: 0,
+    lead: null,
+    how: null,
+    steps: null,
+    next: arc.next,
+    blocks,
+    words: blocks.reduce(
+      (n, block) =>
+        n + (block.type === "p" ? words(block.text) : words(block.items.join(" "))),
+      0,
+    ),
+    kind: "insight",
+  };
+}
+
 function insightCount(articleWords) {
   if (articleWords <= 900) return 4;
   if (articleWords <= 1600) return 6;
@@ -663,7 +720,7 @@ for (const file of files.sort()) {
     blocks.push({ ...block, section, anchor });
   });
 
-  const articleIdeas = curated[slug]?.length
+  let articleIdeas = curated[slug]?.length
     ? normaliseCurated(slug, curated[slug])
     : insightsFor(article, blocks);
 
@@ -691,6 +748,18 @@ for (const file of files.sort()) {
     }
   }
 
+  if (arcs[slug] && articleIdeas.length) {
+    articleIdeas = [
+      primerCard(slug, arcs[slug]),
+      ...articleIdeas,
+      outroCard(slug, arcs[slug]),
+    ];
+  }
+  articleIdeas.forEach((idea, index, all) => {
+    idea.part = index + 1;
+    idea.parts = all.length;
+  });
+
   ideas.push(...articleIdeas);
   corpus[slug] = {
     title,
@@ -711,7 +780,7 @@ for (const idea of ideas) {
   ids.add(id);
 }
 
-const out = { generatedAt: new Date().toISOString(), articles, ideas };
+const out = { generatedAt: new Date().toISOString(), articles, arcs, ideas };
 await fs.mkdir(path.join(import.meta.dirname, "..", "public", "data"), { recursive: true });
 await fs.writeFile(path.join(OUT, "feed.json"), JSON.stringify(out));
 await fs.writeFile(path.join(import.meta.dirname, "..", "public", "data", "feed.json"), JSON.stringify(out));

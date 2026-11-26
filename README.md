@@ -2,7 +2,7 @@
 
 **doomscroll, but wiser.**
 
-Feedwise is a small, installable reading app that replaces the reflex scroll with an endless feed of atomic ideas. Every card is one self-contained insight pulled from the 112 engineering essays on [arpitbhayani.me](https://arpitbhayani.me/blogs/) — 680 curated insights in total — with streaks, XP, recall quizzes, saved ideas, collections, highlights and notes on top.
+Feedwise is a small, installable reading app that replaces the reflex scroll with an endless feed of atomic ideas. Every card is one self-contained insight pulled from the 112 engineering essays on [arpitbhayani.me](https://arpitbhayani.me/blogs/). Each essay is a guided explainer: a **Start here** card defines the 2–4 terms you need, the insights follow in order, and a **Where this leads** card covers the consequences and next steps — 680 insights plus 112 primers and 112 closers, with streaks, XP, recall quizzes, saved ideas, collections, highlights and notes on top.
 
 > Feedwise is an independent, personal reading layer. All ideas and underlying essays belong to Arpit Bhayani; cards are editorial paraphrases and link back to the original. It is not affiliated with the author.
 
@@ -10,7 +10,8 @@ Feedwise is a small, installable reading app that replaces the reflex scroll wit
 
 - **An endless, swipe-style feed** of one-idea cards. Feed order is deterministic per user and per day, so it stays stable while you read, and likes/saves never reshuffle it.
 - **Latest tab** for a strict newest-essay-first read, plus category tabs. Inside `For you`, each essay's insights stay together and in order, so a run of cards reads like the argument of the essay instead of loose paragraphs.
-- **Typed, synthesized insight cards.** Curated essays render each idea as a concept, pattern, tradeoff, failure, action or result, with a "why it matters" line, an implementation/application note, practical steps ("Try it yourself") and checklist-style action items. The card itself stays a teaser; the reader shows the full breakdown. Curated cards live in `content/curated.json`, with implementation notes in `content/curated-details.json`.
+- **Typed, synthesized insight cards.** Every idea is a concept, pattern, tradeoff, failure, action or result, with a "why it matters" line, an implementation/application note, practical steps ("Try it yourself") and checklist-style action items. The card itself stays a teaser; the reader shows the full breakdown.
+- **Vocabulary and narrative layer.** Each essay opens with a **Start here** card that defines the terms the rest of the cards assume, and closes with **Where this leads** — consequences, open questions and concrete next steps. Every reader has **Contents** (the full arc in reading order) and **Terms** (the essay glossary) one tap away.
 - **Email + password auth** with hashed passwords (`bcryptjs`) and database-backed sessions in an httpOnly cookie.
 - **Daily goal + streak** with a progress ring, a 7-day chart and a 28-day heatmap.
 - **XP, levels and topic mastery** across five topics: distributed systems, algorithms, systems internals, AI systems and career growth.
@@ -68,14 +69,15 @@ Nothing else is required — there are no migrations to run and no background jo
 The generated content is committed, so you only need this if you want to refresh the library.
 
 ```bash
-pnpm content:fetch   # scrape the 112 essay pages into .cache/pages
-pnpm content:merge   # merge curated batches into content/curated.json
-pnpm content:build   # rebuild content/feed.json + content/quizzes.json
-pnpm content:curate  # merge + build
-pnpm content         # fetch + build (extraction fallback only)
+pnpm content:fetch        # scrape the 112 essay pages into .cache/pages
+pnpm content:merge        # merge curated card batches into content/curated.json
+pnpm content:merge-arcs   # merge primer/outro/glossary batches into content/arcs.json
+pnpm content:build        # rebuild content/feed.json + content/quizzes.json
+pnpm content:curate       # merge cards + arcs, then build
+pnpm content              # fetch + build (extraction fallback only)
 ```
 
-Curated cards are authored per essay in `content/curated.json`; implementation notes and practical steps live in `content/curated-details.json`. The batch workflow (`scripts/merge-curated.mjs`) merges `.cache/curated/batch-*.json`, validates types, titles, coverage, action lists and copy-paste runs, then writes both files.
+Curated cards are authored per essay in `content/curated.json`; implementation notes and practical steps live in `content/curated-details.json`. The batch workflow (`scripts/merge-curated.mjs`) merges `.cache/curated/batch-*.json`, validates types, titles, coverage, action lists and copy-paste runs, then writes both files. Vocabulary and narrative arcs live in `content/arcs.json` (the six editorial essays are maintained by hand in `content/arcs-manual.json`); `scripts/merge-arcs.mjs` validates 2–4 terms, an arc, a primer, an outro and next steps for every essay.
 
 `content:build` also writes client-fetchable copies to `public/data/`, which the feed uses for infinite scrolling and offline reading.
 

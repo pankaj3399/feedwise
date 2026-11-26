@@ -43,6 +43,7 @@ export default async function FeedPage({
       seed={seed}
       initialTopic={topic}
       initialMode={mode === "latest" ? "latest" : undefined}
+      initialArcs={feedData.arcs}
     />
   );
 }

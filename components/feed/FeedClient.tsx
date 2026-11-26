@@ -15,6 +15,7 @@ import {
 import type {
   Article,
   Collection,
+  EssayArc,
   FeedData,
   Idea,
   Quiz,
@@ -81,6 +82,7 @@ export function FeedClient({
   seed,
   initialTopic,
   initialMode,
+  initialArcs,
 }: {
   initialState: UserState;
   initialIdeas: Idea[];
@@ -89,6 +91,7 @@ export function FeedClient({
   seed: string;
   initialTopic?: string;
   initialMode?: string;
+  initialArcs?: Record<string, EssayArc>;
 }) {
   const { stats, patchStats } = useUser();
   const { toast } = useToast();
@@ -154,6 +157,7 @@ export function FeedClient({
   }, []);
 
   const articleMap = data?.articles ?? initialArticles;
+  const arcMap = data?.arcs ?? initialArcs ?? {};
 
   const ideas = useMemo(() => {
     if (!data) return initialIdeas;
@@ -531,13 +535,21 @@ export function FeedClient({
     [collectionIdea, patchStats, toast],
   );
 
-  const related = useMemo(() => {
+  const series = useMemo(() => {
     if (!reader) return [];
     const source = data?.ideas ?? initialIdeas;
-    return source.filter((idea) => idea.article === reader.article && idea.id !== reader.id).slice(0, 4);
+    return source
+      .filter((idea) => idea.article === reader.article)
+      .sort((a, b) => a.part - b.part || a.id.localeCompare(b.id));
   }, [reader, data, initialIdeas]);
 
+  const related = useMemo(() => {
+    if (!reader) return [];
+    return series.filter((idea) => idea.id !== reader.id).slice(0, 4);
+  }, [reader, series]);
+
   const readerArticle = reader ? articleMap[reader.article] : undefined;
+  const readerArc = reader ? arcMap[reader.article] : undefined;
   const menuArticle = menuIdea ? articleMap[menuIdea.article] : undefined;
 
   return (
@@ -602,6 +614,14 @@ export function FeedClient({
                   onOpen={() => openReader(entry.idea)}
                   onSource={() => openSource(entry.idea, article)}
                   onMore={() => setMenuIdea(entry.idea)}
+                  nextTitle={
+                    entry.idea.part < entry.idea.parts
+                      ? entries
+                          .slice(index + 1)
+                          .find((next): next is { type: "idea"; idea: Idea } => next.type === "idea")
+                          ?.idea.title
+                      : undefined
+                  }
                 />
               );
             })}
@@ -663,6 +683,8 @@ export function FeedClient({
           liked={liked.has(reader.id)}
           saved={saved.has(reader.id)}
           related={related}
+          series={series}
+          terms={readerArc?.terms ?? []}
           onClose={closeReader}
           onLike={() => toggleLike(reader.id)}
           onSave={() => toggleSave(reader)}

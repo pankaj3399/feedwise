@@ -1,0 +1,225 @@
+{
+  "compiling-an-sop-into-a-3b-model": {
+    "problem": "A long procedural prompt is resent on every turn, so a stable workflow keeps paying the same instruction cost.",
+    "terms": [
+      {
+        "term": "Procedural prompt",
+        "definition": "Instructions that tell a model how to perform a multi-step task, written into the prompt instead of learned by the model.",
+        "why": "The experiment replaces a 3,500-token procedural prompt with a trigger token."
+      },
+      {
+        "term": "QLoRA",
+        "definition": "A fine-tuning method that keeps the base model frozen in 4-bit precision and trains a small low-rank adapter on top.",
+        "why": "It is how the 3B model was trained on one consumer GPU."
+      },
+      {
+        "term": "Loss masking",
+        "definition": "Telling the training loop which tokens to ignore when computing the error, so only the tokens you care about are learned.",
+        "why": "It stops the model from memorizing tool outputs and random telemetry."
+      },
+      {
+        "term": "Adapter",
+        "definition": "A small set of trained weights attached to a frozen base model; it can be saved and loaded separately.",
+        "why": "The compiled procedure lives in a 115 MB adapter, not in the prompt."
+      }
+    ],
+    "arc": [
+      "Why resending a long SOP is expensive",
+      "How the procedure was moved into a 3B adapter",
+      "What the accuracy, token and cost results were",
+      "When compilation is the wrong choice"
+    ],
+    "primer": "The result is easier to read once you know what was compiled, what QLoRA changes, and why the training loss ignores tool outputs.",
+    "outro": "Compiling a procedure changes the economics of a stable agent, but it also turns every rule change into a model-versioning problem. The next questions are how to evaluate a compiled adapter, how to roll it out safely, and when a prompt is still the cheaper tool.",
+    "next": [
+      "Compile one stable internal workflow and compare token cost and accuracy against the prompt baseline.",
+      "Read the evaluation and versioning cards before shipping an adapter.",
+      "Keep a prompt-based fallback for procedures that change weekly."
+    ]
+  },
+  "slop-debt": {
+    "problem": "AI-generated code can look correct while nobody actually chose its structure, and that incoherence compounds.",
+    "terms": [
+      {
+        "term": "Tech debt",
+        "definition": "A known shortcut taken to ship sooner, with a reason you can recover and pay down later.",
+        "why": "Slop debt is defined against it."
+      },
+      {
+        "term": "Slop debt",
+        "definition": "Incoherence that accumulates when generated code is merged without a human deciding its shape.",
+        "why": "It is the essay's central idea."
+      },
+      {
+        "term": "Incoherence",
+        "definition": "Code that is locally correct but uses different patterns for the same problem across the codebase.",
+        "why": "It is the property that makes slop hard to trace and refactor."
+      }
+    ],
+    "arc": [
+      "Why slop is not just high-volume tech debt",
+      "How generation passes copy existing incoherence",
+      "Why review and refactoring miss it",
+      "What to do once it has spread"
+    ],
+    "primer": "The argument turns on the difference between a decision and the absence of one, so the two kinds of debt need different names.",
+    "outro": "If slop is incoherence rather than volume, the fix is architectural ownership, not more review. The open problem is that teams are generating code faster than they are building the discipline to keep it coherent, and no reliable prevention playbook exists yet.",
+    "next": [
+      "Audit one generated module for consistency, not just correctness.",
+      "Ask who owns the architecture before adding more generation passes.",
+      "Budget for a rewrite when incoherence is smeared across the codebase."
+    ]
+  },
+  "ai-first-org": {
+    "problem": "AI-first teams keep processes built for a world where typing code was the bottleneck.",
+    "terms": [
+      {
+        "term": "Bottleneck",
+        "definition": "The step that limits the throughput of the whole system.",
+        "why": "The essay argues the bottleneck moved from writing code to verifying it."
+      },
+      {
+        "term": "Agentic coding",
+        "definition": "Using an AI agent to plan, write, test and iterate on code with limited human typing.",
+        "why": "It is the shift that changes the process assumptions."
+      },
+      {
+        "term": "Just-in-time planning",
+        "definition": "Doing the minimum planning right before it is needed, instead of a long roadmap upfront.",
+        "why": "It is the replacement for heavy upfront planning."
+      },
+      {
+        "term": "Dogfooding",
+        "definition": "Using your own product or tools internally before asking customers to use them.",
+        "why": "The essay treats daily AI-tool use as non-negotiable."
+      }
+    ],
+    "arc": [
+      "Why old processes optimized the wrong constraint",
+      "How planning, review and hiring change",
+      "Which metrics still matter",
+      "How to audit a process that no longer fits"
+    ],
+    "primer": "The cards assume a few org-design terms; once those are clear, the argument is about moving process to the new bottleneck.",
+    "outro": "The shift does not remove process; it moves the constraint to verification, review and judgment. The next question for a team is which rituals still close a gap and which ones only survive out of habit.",
+    "next": [
+      "Measure where engineering time goes after AI tools are adopted.",
+      "Audit the noisiest recurring ritual.",
+      "Move one process from upfront planning to just-in-time prototyping."
+    ]
+  },
+  "three-skills": {
+    "problem": "Operational knowledge lives in docs that go stale, so people wait, guess and debug longer than they should.",
+    "terms": [
+      {
+        "term": "Skill",
+        "definition": "A packaged, executable capability an AI agent can invoke, with instructions and tools.",
+        "why": "The essay proposes three org-level skills."
+      },
+      {
+        "term": "Runbook",
+        "definition": "A documented procedure for handling a recurring operational task.",
+        "why": "Static runbooks are what the debugging skill replaces."
+      },
+      {
+        "term": "Smoke test",
+        "definition": "A quick check after deployment that the critical paths still work.",
+        "why": "The deployment skill runs them automatically."
+      },
+      {
+        "term": "Rollback",
+        "definition": "Returning a deployed service to its previous working version.",
+        "why": "The deployment skill must make rollback as reliable as the forward path."
+      }
+    ],
+    "arc": [
+      "Why docs fail silently",
+      "The three skills: create, deploy, debug",
+      "Which one to build first",
+      "How to measure whether it works"
+    ],
+    "primer": "The essay is a build order for three executable skills; the terms below are the operational pieces each one needs.",
+    "outro": "Turning org knowledge into tools shifts the maintenance burden from readers to the tool itself. The next step is to pick the workflow that causes the most waiting or the most incidents, and make that one executable before building the other two.",
+    "next": [
+      "Pick the service that pages most and build the debugging skill around it.",
+      "Exercise rollback on the next deployment.",
+      "Track repo-to-live time, deployment frequency and mean time to diagnose."
+    ]
+  },
+  "g-eval": {
+    "problem": "Open-ended model output has no single correct answer, so teams fall back on metrics nobody trusts.",
+    "terms": [
+      {
+        "term": "Reference-free evaluation",
+        "definition": "Scoring an output against a rubric instead of comparing it to a gold-standard answer.",
+        "why": "Most real outputs have no single reference."
+      },
+      {
+        "term": "Chain-of-thought",
+        "definition": "A model-generated sequence of reasoning steps produced before a final answer.",
+        "why": "G-Eval generates evaluation steps before scoring a candidate."
+      },
+      {
+        "term": "Token probability",
+        "definition": "The model's confidence assigned to each possible next token; it can be read instead of only the printed digit.",
+        "why": "G-Eval turns score tokens into a fine-grained expected score."
+      },
+      {
+        "term": "Self-preference bias",
+        "definition": "A judge's tendency to favor text generated by models from its own family.",
+        "why": "It is why the judge must come from a different family."
+      }
+    ],
+    "arc": [
+      "Why a single score is not enough",
+      "How the rubric and chain-of-thought work",
+      "How token probabilities produce a score",
+      "When not to use G-Eval"
+    ],
+    "primer": "The method is easier to follow once the difference between a reference answer, a rubric and a token probability is clear.",
+    "outro": "G-Eval makes open-ended evaluation repeatable, but it does not make it objective. The next questions are how to calibrate a rubric against human labels, how often to recalibrate, and which closed-form checks should stay classifiers.",
+    "next": [
+      "Write a precise rubric for one open-ended feature.",
+      "Score a small set of known-good and known-bad outputs.",
+      "Use a judge from a different model family and compare it with human labels."
+    ]
+  },
+  "ai-topological-sort": {
+    "problem": "AI workflows have dependencies, but orchestrators often dispatch steps in a hardcoded order that cannot express parallelism or partial failure.",
+    "terms": [
+      {
+        "term": "DAG",
+        "definition": "A directed acyclic graph: nodes with one-way edges and no cycles.",
+        "why": "It is the model for tasks and dependencies."
+      },
+      {
+        "term": "Topological sort",
+        "definition": "An ordering of a DAG where every node comes after the nodes it depends on.",
+        "why": "It turns the dependency graph into a valid schedule."
+      },
+      {
+        "term": "Fan-in / fan-out",
+        "definition": "One node receiving from many predecessors, or sending to many successors.",
+        "why": "Fan-in creates the merge bottleneck; fan-out creates parallelism."
+      },
+      {
+        "term": "Critical path",
+        "definition": "The longest chain of dependent tasks, which sets the minimum possible runtime.",
+        "why": "It shows where parallelism actually helps."
+      }
+    ],
+    "arc": [
+      "Why a workflow is a dependency graph",
+      "How topological sort produces an order",
+      "Where parallelism and incremental recomputation come from",
+      "What topological sort does not solve"
+    ],
+    "primer": "The essay uses graph terms precisely; once DAG, topological order and critical path are clear, the scheduling rules follow.",
+    "outro": "A DAG gives a workflow a correctness contract and a scheduler input, but it does not balance the work or hide slow fan-in nodes. The next step is to model one real pipeline as a graph, validate it at definition time, and profile its critical path.",
+    "next": [
+      "Draw one AI pipeline as a DAG.",
+      "Check for cycles before execution.",
+      "Profile the longest dependency chain and the biggest fan-in node."
+    ]
+  }
+}

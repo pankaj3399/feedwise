@@ -10,7 +10,8 @@
     "content:fetch": "node scripts/fetch-content.mjs",
     "content:build": "node scripts/build-content.mjs && node scripts/build-quizzes.mjs",
     "content:merge": "node scripts/merge-curated.mjs",
-    "content:curate": "pnpm content:merge && pnpm content:build",
+    "content:merge-arcs": "node scripts/merge-arcs.mjs",
+    "content:curate": "pnpm content:merge && pnpm content:merge-arcs && pnpm content:build",
     "content": "pnpm content:fetch && pnpm content:build",
     "icons": "node scripts/build-icons.mjs"
   },

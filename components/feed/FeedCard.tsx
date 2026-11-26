@@ -60,6 +60,7 @@ export function FeedCard({
   onSource,
   onMore,
   showHint = false,
+  nextTitle,
 }: {
   idea: Idea;
   article: Article;
@@ -71,9 +72,18 @@ export function FeedCard({
   onSource: () => void;
   onMore: () => void;
   showHint?: boolean;
+  nextTitle?: string;
 }) {
   const category = categoryOf(article.category);
   const insightType = insightTypeOf(idea.type);
+  const cta =
+    idea.type === "primer"
+      ? "See the terms"
+      : idea.type === "outro"
+        ? "See what's next"
+        : idea.how || idea.steps?.length
+          ? "See the breakdown"
+          : "Read this idea";
   const [bursts, setBursts] = useState<{ id: number; x: number; y: number }[]>([]);
   const [hint, setHint] = useState(showHint);
   const lastTap = useRef(0);
@@ -185,6 +195,20 @@ export function FeedCard({
           preview
           variant={idea.type === "action" ? "action" : "default"}
         />
+        {idea.type === "primer" && idea.terms?.length ? (
+          <div className="mt-4 space-y-2.5">
+            {idea.terms.slice(0, 2).map((term) => (
+              <p
+                key={term.term}
+                className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2 text-[12px] leading-relaxed text-cream/70"
+              >
+                <span className="font-semibold text-cream">{term.term}</span>
+                <span className="text-muted"> — </span>
+                {term.definition}
+              </p>
+            ))}
+          </div>
+        ) : null}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-ink via-ink/85 to-transparent" />
         {hint ? (
           <div className="animate-fade-in pointer-events-none absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-white/10 bg-black/55 px-3 py-1.5 text-[10px] text-cream/70 backdrop-blur-md">
@@ -198,9 +222,16 @@ export function FeedCard({
         onClick={onOpen}
         className="tap relative mt-3 inline-flex shrink-0 items-center gap-1.5 self-start rounded-full border border-white/10 bg-white/[0.035] px-3.5 py-1.5 text-[11px] font-medium text-cream/80 hover:border-white/20 hover:bg-white/[0.06]"
       >
-        {idea.how || idea.steps?.length ? "See the breakdown" : "Read this idea"}{" "}
-        <ArrowRight size={12} />
+        {cta} <ArrowRight size={12} />
       </button>
+
+      {nextTitle ? (
+        <p className="relative mt-2.5 shrink-0 truncate text-[10px] text-muted/70">
+          <span className="text-[9px] uppercase tracking-[0.16em] text-muted/50">Next</span>
+          <span className="mx-1.5 text-white/15">·</span>
+          {nextTitle}
+        </p>
+      ) : null}
 
       <div className="relative mt-2 flex items-end gap-0.5 border-t border-white/[0.06] pt-2">
         <ActionButton

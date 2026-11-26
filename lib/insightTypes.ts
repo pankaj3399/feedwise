@@ -11,6 +11,8 @@ export const INSIGHT_TYPES: Record<
   failure: { label: "Failure", color: "#F472B6", soft: "rgba(244,114,182,0.12)" },
   action: { label: "Do this", color: "#34D399", soft: "rgba(52,211,153,0.12)" },
   result: { label: "Result", color: "#D8FF5F", soft: "rgba(216,255,95,0.12)" },
+  primer: { label: "Start here", color: "#D8FF5F", soft: "rgba(216,255,95,0.12)" },
+  outro: { label: "Where this leads", color: "#22D3EE", soft: "rgba(34,211,238,0.12)" },
 };
 
 export function insightTypeOf(type?: InsightType | null) {

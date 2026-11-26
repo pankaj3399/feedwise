@@ -5,13 +5,15 @@ import {
   ArrowLeft,
   ArrowUpRight,
   Bookmark,
+  BookOpen,
   FolderPlus,
   Heart,
   Highlighter,
+  List,
   Share2,
   X,
 } from "lucide-react";
-import type { Article, Idea } from "@/lib/types";
+import type { Article, GlossaryTerm, Idea } from "@/lib/types";
 import { categoryOf } from "@/lib/categories";
 import { insightTypeOf } from "@/lib/insightTypes";
 import { readingTime, relativeDate } from "@/lib/utils";
@@ -33,12 +35,16 @@ export function IdeaReader({
   onAddToCollection,
   onHighlight,
   onOpenRelated,
+  terms = [],
+  series = [],
 }: {
   idea: Idea;
   article: Article;
   liked: boolean;
   saved: boolean;
   related: Idea[];
+  terms?: GlossaryTerm[];
+  series?: Idea[];
   onClose: () => void;
   onLike: () => void;
   onSave: () => void;
@@ -53,6 +59,8 @@ export function IdeaReader({
   const [selected, setSelected] = useState<string | null>(null);
   const [noteOpen, setNoteOpen] = useState(false);
   const [note, setNote] = useState("");
+  const [termsOpen, setTermsOpen] = useState(false);
+  const [seriesOpen, setSeriesOpen] = useState(false);
 
   useEffect(() => {
     const previous = document.body.style.overflow;
@@ -159,6 +167,27 @@ export function IdeaReader({
             From <span className="text-cream/70">{article.title}</span> by Arpit Bhayani
           </p>
 
+          {series.length > 1 || terms.length ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {series.length > 1 ? (
+                <button
+                  onClick={() => setSeriesOpen(true)}
+                  className="tap inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[10px] font-medium text-cream/75 hover:bg-white/[0.06]"
+                >
+                  <List size={12} /> Contents · {series.length}
+                </button>
+              ) : null}
+              {terms.length ? (
+                <button
+                  onClick={() => setTermsOpen(true)}
+                  className="tap inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[10px] font-medium text-cream/75 hover:bg-white/[0.06]"
+                >
+                  <BookOpen size={12} /> Terms · {terms.length}
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+
           {insightType ? (
             <span
               className="mt-4 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em]"
@@ -186,6 +215,48 @@ export function IdeaReader({
               variant={idea.type === "action" ? "action" : "default"}
             />
           </div>
+
+          {idea.type === "primer" && idea.terms?.length ? (
+            <section className="mt-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-lime/80">
+                Terms you need
+              </p>
+              <div className="mt-3 space-y-3">
+                {idea.terms.map((term) => (
+                  <div
+                    key={term.term}
+                    className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-3.5"
+                  >
+                    <p className="text-[13px] font-semibold text-cream">{term.term}</p>
+                    <p className="mt-1 text-[13px] leading-relaxed text-cream/75">{term.definition}</p>
+                    {term.why ? (
+                      <p className="mt-1.5 text-[11px] leading-relaxed text-lime/70">
+                        Why it matters: {term.why}
+                      </p>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {idea.type === "primer" && idea.arc?.length ? (
+            <section className="mt-6">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">
+                What you'll learn
+              </p>
+              <ol className="mt-3 space-y-2.5">
+                {idea.arc.map((step, index) => (
+                  <li key={`${idea.id}-arc-${index}`} className="flex gap-3 text-[13px] leading-relaxed text-cream/75">
+                    <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-white/[0.06] text-[10px] font-semibold text-muted">
+                      {index + 1}
+                    </span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          ) : null}
 
           {idea.how ? (
             <section className="mt-7 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
@@ -352,6 +423,78 @@ export function IdeaReader({
         >
           Save highlight
         </button>
+      </Sheet>
+
+      <Sheet
+        open={termsOpen}
+        onClose={() => setTermsOpen(false)}
+        title="Terms in this explainer"
+        description={article.title}
+      >
+        <div className="space-y-3">
+          {terms.map((term) => (
+            <div
+              key={term.term}
+              className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3.5"
+            >
+              <p className="text-[13px] font-semibold text-cream">{term.term}</p>
+              <p className="mt-1 text-[12.5px] leading-relaxed text-cream/75">{term.definition}</p>
+              {term.why ? (
+                <p className="mt-1.5 text-[11px] leading-relaxed text-lime/70">{term.why}</p>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      </Sheet>
+
+      <Sheet
+        open={seriesOpen}
+        onClose={() => setSeriesOpen(false)}
+        title="Inside this explainer"
+        description={`${series.length} cards, in reading order`}
+      >
+        <div className="space-y-1.5">
+          {series.map((item, index) => {
+            const itemType = insightTypeOf(item.type);
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setSeriesOpen(false);
+                  onOpenRelated(item);
+                }}
+                className={cn(
+                  "tap flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left",
+                  item.id === idea.id
+                    ? "border-lime/30 bg-lime/[0.07]"
+                    : "border-white/[0.06] bg-white/[0.025] hover:bg-white/[0.05]",
+                )}
+              >
+                <span className="grid size-5 shrink-0 place-items-center rounded-full bg-white/[0.06] text-[9px] font-semibold text-muted">
+                  {index + 1}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[12.5px] leading-snug text-cream/85">{item.title}</span>
+                  {itemType ? (
+                    <span
+                      className="mt-0.5 block text-[9px] font-semibold uppercase tracking-[0.12em]"
+                      style={{ color: itemType.color }}
+                    >
+                      {itemType.label}
+                    </span>
+                  ) : null}
+                </span>
+                {item.id === idea.id ? (
+                  <span className="shrink-0 text-[8px] font-semibold uppercase tracking-[0.12em] text-lime">
+                    Here
+                  </span>
+                ) : (
+                  <ArrowUpRight size={13} className="shrink-0 text-muted" />
+                )}
+              </button>
+            );
+          })}
+        </div>
       </Sheet>
     </div>
   );
