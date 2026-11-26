@@ -30,6 +30,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { FeedCard } from "./FeedCard";
 import { QuizCard } from "./QuizCard";
 import { IdeaReader } from "./IdeaReader";
+import { ExplainerReader } from "./ExplainerReader";
 import { TopicTabs } from "./TopicTabs";
 import { CollectionPicker } from "./CollectionPicker";
 import { cn } from "@/lib/utils";
@@ -104,6 +105,7 @@ export function FeedClient({
   const [saved, setSaved] = useState(() => new Set(initialState.saved));
   const [collections, setCollections] = useState<Collection[]>(initialState.collections);
   const [reader, setReader] = useState<Idea | null>(null);
+  const [explainerArticle, setExplainerArticle] = useState<string | null>(null);
   const [menuIdea, setMenuIdea] = useState<Idea | null>(null);
   const [collectionIdea, setCollectionIdea] = useState<Idea | null>(null);
   const [visibleCount, setVisibleCount] = useState(10);
@@ -151,7 +153,10 @@ export function FeedClient({
   }, [toast]);
 
   useEffect(() => {
-    const onPop = () => setReader(null);
+    const onPop = () => {
+      setReader(null);
+      setExplainerArticle(null);
+    };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
@@ -389,6 +394,16 @@ export function FeedClient({
     if (window.history.state?.fwReader) window.history.back();
   }, []);
 
+  const openExplainer = useCallback((idea: Idea) => {
+    setExplainerArticle(idea.article);
+    window.history.pushState({ fwExplainer: true }, "");
+  }, []);
+
+  const closeExplainer = useCallback(() => {
+    setExplainerArticle(null);
+    if (window.history.state?.fwExplainer) window.history.back();
+  }, []);
+
   const addHighlight = useCallback(
     (text: string, note: string) => {
       if (!reader) return;
@@ -550,6 +565,16 @@ export function FeedClient({
 
   const readerArticle = reader ? articleMap[reader.article] : undefined;
   const readerArc = reader ? arcMap[reader.article] : undefined;
+
+  const explainerIdeas = useMemo(() => {
+    if (!explainerArticle) return [];
+    const source = data?.ideas ?? initialIdeas;
+    return source
+      .filter((idea) => idea.article === explainerArticle)
+      .sort((a, b) => a.part - b.part || a.id.localeCompare(b.id));
+  }, [explainerArticle, data, initialIdeas]);
+
+  const explainer = explainerArticle ? articleMap[explainerArticle] : undefined;
   const menuArticle = menuIdea ? articleMap[menuIdea.article] : undefined;
 
   return (
@@ -614,6 +639,7 @@ export function FeedClient({
                   onOpen={() => openReader(entry.idea)}
                   onSource={() => openSource(entry.idea, article)}
                   onMore={() => setMenuIdea(entry.idea)}
+                  onReadExplainer={() => openExplainer(entry.idea)}
                   nextTitle={
                     entry.idea.part < entry.idea.parts
                       ? entries
@@ -690,9 +716,26 @@ export function FeedClient({
           onSave={() => toggleSave(reader)}
           onSource={() => openSource(reader, readerArticle)}
           onShare={() => shareIdea(reader, readerArticle)}
+          onReadExplainer={() => {
+            setReader(null);
+            openExplainer(reader);
+          }}
           onAddToCollection={() => setCollectionIdea(reader)}
           onHighlight={addHighlight}
           onOpenRelated={(idea) => setReader(idea)}
+        />
+      ) : null}
+
+      {explainer && explainerIdeas.length ? (
+        <ExplainerReader
+          article={explainer}
+          ideas={explainerIdeas}
+          onClose={closeExplainer}
+          onOpenCard={(idea) => {
+            setExplainerArticle(null);
+            openReader(idea);
+          }}
+          onSource={() => openSource(explainerIdeas[0], explainer)}
         />
       ) : null}
 

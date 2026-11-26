@@ -9,6 +9,7 @@ import {
   FolderPlus,
   Heart,
   Highlighter,
+  Layers,
   List,
   Share2,
   X,
@@ -35,6 +36,7 @@ export function IdeaReader({
   onAddToCollection,
   onHighlight,
   onOpenRelated,
+  onReadExplainer,
   terms = [],
   series = [],
 }: {
@@ -45,6 +47,7 @@ export function IdeaReader({
   related: Idea[];
   terms?: GlossaryTerm[];
   series?: Idea[];
+  onReadExplainer?: () => void;
   onClose: () => void;
   onLike: () => void;
   onSave: () => void;
@@ -169,6 +172,14 @@ export function IdeaReader({
 
           {series.length > 1 || terms.length ? (
             <div className="mt-4 flex flex-wrap gap-2">
+              {onReadExplainer ? (
+                <button
+                  onClick={onReadExplainer}
+                  className="tap inline-flex items-center gap-1.5 rounded-full border border-lime/30 bg-lime/10 px-3 py-1.5 text-[10px] font-semibold text-lime hover:bg-lime/15"
+                >
+                  <Layers size={12} /> Read all
+                </button>
+              ) : null}
               {series.length > 1 ? (
                 <button
                   onClick={() => setSeriesOpen(true)}

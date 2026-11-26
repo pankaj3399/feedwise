@@ -12,6 +12,7 @@ Feedwise is a small, installable reading app that replaces the reflex scroll wit
 - **Latest tab** for a strict newest-essay-first read, plus category tabs. Inside `For you`, each essay's insights stay together and in order, so a run of cards reads like the argument of the essay instead of loose paragraphs.
 - **Typed, synthesized insight cards.** Every idea is a concept, pattern, tradeoff, failure, action or result, with a "why it matters" line, an implementation/application note, practical steps ("Try it yourself") and checklist-style action items. The card itself stays a teaser; the reader shows the full breakdown.
 - **Vocabulary and narrative layer.** Each essay opens with a **Start here** card that defines the terms the rest of the cards assume, and closes with **Where this leads** — consequences, open questions and concrete next steps. Every reader has **Contents** (the full arc in reading order) and **Terms** (the essay glossary) one tap away.
+- **Two ways to read.** Swipe the card feed one idea at a time, or open **Read the whole explainer** for a continuous long-form scroll of the same essay: primer, terms, every insight, implementation notes, steps and the closing arc in one place.
 - **Email + password auth** with hashed passwords (`bcryptjs`) and database-backed sessions in an httpOnly cookie.
 - **Daily goal + streak** with a progress ring, a 7-day chart and a 28-day heatmap.
 - **XP, levels and topic mastery** across five topics: distributed systems, algorithms, systems internals, AI systems and career growth.
@@ -106,7 +107,7 @@ app/
   onboarding/       3-step first-run flow
   api/              auth, idea state, collections, profile, interests, quiz, highlights
 components/
-  feed/             feed cards, reader, blocks renderer, inline quiz
+  feed/             feed cards, card reader, explainer reader, blocks renderer, inline quiz
   saved/ topics/ quiz/ profile/ highlights/ onboarding/ auth/
   content/          markdown-ish inline renderer + KaTeX
   layout/           app shell, header, bottom nav

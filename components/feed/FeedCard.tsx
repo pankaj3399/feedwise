@@ -61,6 +61,7 @@ export function FeedCard({
   onMore,
   showHint = false,
   nextTitle,
+  onReadExplainer,
 }: {
   idea: Idea;
   article: Article;
@@ -73,6 +74,7 @@ export function FeedCard({
   onMore: () => void;
   showHint?: boolean;
   nextTitle?: string;
+  onReadExplainer?: () => void;
 }) {
   const category = categoryOf(article.category);
   const insightType = insightTypeOf(idea.type);
@@ -217,13 +219,32 @@ export function FeedCard({
         ) : null}
       </div>
 
-      <button
-        type="button"
-        onClick={onOpen}
-        className="tap relative mt-3 inline-flex shrink-0 items-center gap-1.5 self-start rounded-full border border-white/10 bg-white/[0.035] px-3.5 py-1.5 text-[11px] font-medium text-cream/80 hover:border-white/20 hover:bg-white/[0.06]"
-      >
-        {cta} <ArrowRight size={12} />
-      </button>
+      {idea.type === "primer" && onReadExplainer ? (
+        <div className="relative mt-3 flex shrink-0 flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={onReadExplainer}
+            className="tap inline-flex items-center gap-1.5 rounded-full bg-lime px-3.5 py-1.5 text-[11px] font-semibold text-ink"
+          >
+            Read the whole explainer <ArrowRight size={12} />
+          </button>
+          <button
+            type="button"
+            onClick={onOpen}
+            className="tap inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5 text-[11px] font-medium text-cream/80 hover:border-white/20 hover:bg-white/[0.06]"
+          >
+            See the terms
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onOpen}
+          className="tap relative mt-3 inline-flex shrink-0 items-center gap-1.5 self-start rounded-full border border-white/10 bg-white/[0.035] px-3.5 py-1.5 text-[11px] font-medium text-cream/80 hover:border-white/20 hover:bg-white/[0.06]"
+        >
+          {cta} <ArrowRight size={12} />
+        </button>
+      )}
 
       {nextTitle ? (
         <p className="relative mt-2.5 shrink-0 truncate text-[10px] text-muted/70">
