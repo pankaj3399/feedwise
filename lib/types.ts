@@ -59,6 +59,8 @@ export type Idea = {
   arc?: string[] | null;
   /** Follow-ups shown by an outro card. */
   next?: string[] | null;
+  /** A real external source that supports the concept. */
+  reference?: { title: string; url: string } | null;
   /** Essay section the insight came from, when it has one. */
   section?: string | null;
 };

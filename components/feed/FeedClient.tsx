@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
+  BookOpen,
   Compass,
   FolderPlus,
   RefreshCw,
@@ -709,8 +710,8 @@ export function FeedClient({
           liked={liked.has(reader.id)}
           saved={saved.has(reader.id)}
           related={related}
-          series={series}
-          terms={readerArc?.terms ?? []}
+          series={[]}
+          terms={[]}
           onClose={closeReader}
           onLike={() => toggleLike(reader.id)}
           onSave={() => toggleSave(reader)}
@@ -773,6 +774,19 @@ export function FeedClient({
               setMenuIdea(null);
             }}
           />
+          {menuIdea?.reference ? (
+            <MenuRow
+              icon={BookOpen}
+              label="Further reading"
+              description={menuIdea.reference.title}
+              onClick={() => {
+                if (menuIdea?.reference) {
+                  window.open(menuIdea.reference.url, "_blank", "noopener,noreferrer");
+                }
+                setMenuIdea(null);
+              }}
+            />
+          ) : null}
           <MenuRow
             icon={ArrowUpRight}
             label="Open the original"

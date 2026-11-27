@@ -11,6 +11,17 @@ await fs.mkdir(OUT, { recursive: true });
 const curated = {};
 const curatedDetails = {};
 const arcs = {};
+const concepts = [];
+try {
+  concepts.push(...JSON.parse(await fs.readFile(path.join(OUT, "concepts.json"), "utf8")));
+} catch {
+  // No concept feed yet; fall back to the curated card pipeline.
+}
+const conceptsByArticle = new Map();
+for (const concept of concepts) {
+  if (!conceptsByArticle.has(concept.article)) conceptsByArticle.set(concept.article, []);
+  conceptsByArticle.get(concept.article).push(concept);
+}
 try {
   Object.assign(arcs, JSON.parse(await fs.readFile(path.join(OUT, "arcs.json"), "utf8")));
 } catch {
@@ -720,9 +731,12 @@ for (const file of files.sort()) {
     blocks.push({ ...block, section, anchor });
   });
 
-  let articleIdeas = curated[slug]?.length
-    ? normaliseCurated(slug, curated[slug])
-    : insightsFor(article, blocks);
+  const conceptCards = conceptsByArticle.get(slug);
+  let articleIdeas = conceptCards?.length
+    ? conceptCards
+    : curated[slug]?.length
+      ? normaliseCurated(slug, curated[slug])
+      : insightsFor(article, blocks);
 
   // A few short, heading-less essays have no sentence that clears the normal
   // claim bar. Still give them one honest card instead of dropping the essay.
@@ -748,17 +762,25 @@ for (const file of files.sort()) {
     }
   }
 
-  if (arcs[slug] && articleIdeas.length) {
+  if (!conceptCards?.length && arcs[slug] && articleIdeas.length) {
     articleIdeas = [
       primerCard(slug, arcs[slug]),
       ...articleIdeas,
       outroCard(slug, arcs[slug]),
     ];
   }
-  articleIdeas.forEach((idea, index, all) => {
-    idea.part = index + 1;
-    idea.parts = all.length;
-  });
+  if (conceptCards?.length) {
+    // Concepts are standalone cards, never a numbered series.
+    articleIdeas.forEach((idea) => {
+      idea.part = 1;
+      idea.parts = 1;
+    });
+  } else {
+    articleIdeas.forEach((idea, index, all) => {
+      idea.part = index + 1;
+      idea.parts = all.length;
+    });
+  }
 
   ideas.push(...articleIdeas);
   corpus[slug] = {
@@ -780,7 +802,12 @@ for (const idea of ideas) {
   ids.add(id);
 }
 
-const out = { generatedAt: new Date().toISOString(), articles, arcs, ideas };
+const out = {
+  generatedAt: new Date().toISOString(),
+  articles,
+  ideas,
+  ...(concepts.length ? {} : { arcs }),
+};
 await fs.mkdir(path.join(import.meta.dirname, "..", "public", "data"), { recursive: true });
 await fs.writeFile(path.join(OUT, "feed.json"), JSON.stringify(out));
 await fs.writeFile(path.join(import.meta.dirname, "..", "public", "data", "feed.json"), JSON.stringify(out));

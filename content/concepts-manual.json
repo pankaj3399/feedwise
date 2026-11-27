@@ -1,0 +1,137 @@
+{
+  "compiling-an-sop-into-a-3b-model": [
+    {
+      "title": "A stable procedure can live in the weights instead of the prompt",
+      "type": "pattern",
+      "takeaway": "For a repeated, well-defined workflow, a compiled adapter can match a frontier model at a fraction of the token cost.",
+      "body": "A 3,500-token incident-triage SOP was compiled into a QLoRA-tuned 3B model instead of being resent on every turn. The compiled model reached 93.0% end-to-end accuracy against Gemini 2.5 Pro's 92.0%, while cutting input tokens from 5,200 to 450 per incident and cost from $1.85 to $0.22 per 1,000 incidents. The prompt kept only a trigger token; the state machine lived in the adapter. This works when the procedure is stable and high-volume, not when the rules change every week.",
+      "section": "The Experimental Numbers",
+      "anchor": "the-experimental-numbers",
+      "reference": {
+        "title": "arpitbbhayani/workflow-slm",
+        "url": "https://github.com/arpitbbhayani/workflow-slm"
+      }
+    },
+    {
+      "title": "Mask the loss on tool outputs so the model learns decisions, not telemetry",
+      "type": "pattern",
+      "takeaway": "In multi-turn tool-calling traces, only the assistant's actions deserve gradient.",
+      "body": "Most tokens in a tool-calling trace are user alerts, system triggers and tool responses. Computing loss over all of them teaches the model to predict random telemetry numbers and commit hashes instead of the next decision. Label those tokens `-100` so gradients flow only through the assistant's actions, and the adapter learns the procedure rather than the simulator's noise.",
+      "section": "The Training Setup: Loss Masking On Assistant Turns",
+      "anchor": "the-training-setup-loss-masking-on-assistant-turns",
+      "reference": null
+    }
+  ],
+  "slop-debt": [
+    {
+      "title": "Slop debt is incoherence, not technical debt at volume",
+      "type": "failure",
+      "takeaway": "The danger of generated code is not how much there is; it is that nobody chose its shape.",
+      "body": "Classic tech debt comes from a decision: you skipped an abstraction or hardcoded a value to ship sooner, and the reason can be recovered later. Slop debt comes from the absence of a decision: the model chose variable names, error handling and layers independently for every file, with no memory of the last one. The result compiles and passes tests, but two functions that look identical may solve the same problem in different ways because no architect enforced consistency.",
+      "section": "Why It Is Not The Same Thing",
+      "anchor": "why-it-is-not-the-same-thing",
+      "reference": null
+    },
+    {
+      "title": "Slop debt compounds because the model reads its own output",
+      "type": "failure",
+      "takeaway": "Every generation pass turns existing incoherence into context for the next pass.",
+      "body": "Once a codebase contains hundreds of files of locally correct but globally inconsistent code, the next generation pass uses that code as context. It copies the bad abstraction because that is what it sees, and adds a third error-handling style because it cannot tell which of the first two is intended. Each cycle does not just add debt; it teaches the next cycle to add debt faster, in the same shape. A human eventually gets frustrated and refactors, but a model has no opinion about whether the pattern is good.",
+      "section": "Why It Grows Exponentially",
+      "anchor": "why-it-grows-exponentially",
+      "reference": null
+    }
+  ],
+  "ai-first-org": [
+    {
+      "title": "AI moves the bottleneck from writing code to verifying it",
+      "type": "concept",
+      "takeaway": "If your process still optimizes for typing speed, it is optimizing for a constraint that no longer exists.",
+      "body": "Every engineering process was built to manage scarce implementation time. Agentic coding removes typing as the bottleneck, but verification, review and security take its place. The constraint moves rather than disappearing, so the useful question is which ritual still closes a gap and which one only survives out of habit.",
+      "section": "",
+      "anchor": "",
+      "reference": null
+    },
+    {
+      "title": "Ask the model before the person",
+      "type": "pattern",
+      "takeaway": "The model watched the change; the author may no longer be the fastest path to context.",
+      "body": "Before agentic coding, “who wrote this” was the fastest way to get context because the author held knowledge nobody else had. Now the model can walk the git history, summarize ownership from CODEOWNERS and recent commits, and pull the PR discussion. Ask what you actually need to know, then reserve the human for judgment calls the model cannot make, and automate any category of question you ask repeatedly.",
+      "section": "Ask The Model Before The Person",
+      "anchor": "ask-the-model-before-the-person",
+      "reference": null
+    }
+  ],
+  "three-skills": [
+    {
+      "title": "Docs rot silently; tools fail loudly",
+      "type": "concept",
+      "takeaway": "Encode operational knowledge as executable tools, not prose nobody notices is stale.",
+      "body": "A stale wiki page can mislead people for months because nothing forces it to reveal that it is wrong. A broken tool fails in front of the next person who uses it, so it actually gets fixed. That difference matters more now that AI agents act on the same instructions: an agent reading a stale runbook has no reliable way to know it is stale, while an agent calling a broken tool gets an immediate failure.",
+      "section": "Why Build Tools Instead of Writing Docs",
+      "anchor": "why-build-tools-instead-of-writing-docs",
+      "reference": null
+    },
+    {
+      "title": "Build the debugging skill before the other two",
+      "type": "action",
+      "takeaway": "Incidents happen on their own schedule, so every one can add a verified failure pattern.",
+      "body": "The debugging skill should match live symptoms to known failure patterns for that service, link directly to the relevant logs, traces and dashboards, and run diagnostics instead of pointing at raw data. Start with the service that pages most and takes longest to fix, because that is where the payoff is visible immediately. Each incident then becomes a chance to add a verified pattern rather than another manual investigation.",
+      "section": "What I Would Actually Do",
+      "anchor": "what-i-would-actually-do",
+      "reference": null
+    }
+  ],
+  "g-eval": [
+    {
+      "title": "Never let the judge come from the same model family",
+      "type": "failure",
+      "takeaway": "LLM judges systematically favor their own family's text, so an independent judge is required.",
+      "body": "LLM judges show a measurable self-preference bias: they favor text generated by models from their own family, even when human reviewers prefer the alternative. A judge that shares a family with the system under test will therefore over-score it. Use a different family for the judge, pin its version, and calibrate the rubric against human-labeled examples before trusting the scores.",
+      "section": "The Bias You Need to Know About",
+      "anchor": "the-bias-you-need-to-know-about",
+      "reference": {
+        "title": "Judging LLM-as-a-Judge with MT-Bench",
+        "url": "https://arxiv.org/abs/2306.05685"
+      }
+    },
+    {
+      "title": "A precise rubric turns an LLM judge from a vibe check into a procedure",
+      "type": "pattern",
+      "takeaway": "G-Eval's consistency comes from defining the dimension precisely and making the judge write its evaluation steps before scoring.",
+      "body": "A vague 1–5 rubric gives the judge no anchor, so it falls back on “does this look fine” and cannot separate a mediocre output from a strong one. G-Eval defines the criterion in concrete terms, has the model generate evaluation steps from that definition, and then scores examples with the steps in view. The generated steps also leave an audit trail: when a score looks wrong, you can see where the judge's reasoning diverged.",
+      "section": "Why It Works",
+      "anchor": "why-it-works",
+      "reference": {
+        "title": "2023 paper",
+        "url": "https://arxiv.org/abs/2303.16634"
+      }
+    }
+  ],
+  "ai-topological-sort": [
+    {
+      "title": "Topological sort turns a dependency graph into a schedule",
+      "type": "concept",
+      "takeaway": "Model the workflow as a DAG first; the execution order and the parallelism then fall out of the graph.",
+      "body": "A workflow is a set of tasks that produce and consume outputs, and a consumer cannot run before its producer finishes. A directed acyclic graph represents those dependencies; a topological order lists every node after the nodes it depends on. Nodes at the same level have no dependency between them, so they can run concurrently. That is what lets an orchestrator dispatch parallel branches without hardcoding the sequence.",
+      "section": "Modeling Workflows as DAGs",
+      "anchor": "modeling-workflows-as-dags",
+      "reference": {
+        "title": "Directed acyclic graphs (DAGs)",
+        "url": "https://en.wikipedia.org/wiki/Directed_acyclic_graph"
+      }
+    },
+    {
+      "title": "Topological sort gives order, not load balance",
+      "type": "failure",
+      "takeaway": "A correct schedule can still have a critical path that leaves most of the cluster waiting.",
+      "body": "If ten parallel tasks all feed into one merge node, the merge cannot start until the slowest of the ten finishes. Topological sort orders the work correctly but does not make the fan-in smaller or move work off the critical path. Profile the longest chain of dependent tasks and the largest fan-in node; that is where parallelism actually pays off.",
+      "section": "What to Watch Out For",
+      "anchor": "what-to-watch-out-for",
+      "reference": {
+        "title": "critical path",
+        "url": "https://en.wikipedia.org/wiki/Critical_path_method"
+      }
+    }
+  ]
+}

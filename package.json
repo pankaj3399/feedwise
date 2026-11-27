@@ -9,9 +9,9 @@
     "typecheck": "tsc --noEmit",
     "content:fetch": "node scripts/fetch-content.mjs",
     "content:build": "node scripts/build-content.mjs && node scripts/build-quizzes.mjs",
-    "content:merge": "node scripts/merge-curated.mjs",
-    "content:merge-arcs": "node scripts/merge-arcs.mjs",
-    "content:curate": "pnpm content:merge && pnpm content:merge-arcs && pnpm content:build",
+    "content:merge-concepts": "node scripts/merge-concepts.mjs",
+    "content:concepts": "pnpm content:merge-concepts && pnpm content:build",
+    "content:curate": "pnpm content:merge-concepts && pnpm content:build",
     "content": "pnpm content:fetch && pnpm content:build",
     "icons": "node scripts/build-icons.mjs"
   },

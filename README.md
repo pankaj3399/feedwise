@@ -2,17 +2,16 @@
 
 **doomscroll, but wiser.**
 
-Feedwise is a small, installable reading app that replaces the reflex scroll with an endless feed of atomic ideas. Every card is one self-contained insight pulled from the 112 engineering essays on [arpitbhayani.me](https://arpitbhayani.me/blogs/). Each essay is a guided explainer: a **Start here** card defines the 2–4 terms you need, the insights follow in order, and a **Where this leads** card covers the consequences and next steps — 680 insights plus 112 primers and 112 closers, with streaks, XP, recall quizzes, saved ideas, collections, highlights and notes on top.
+Feedwise is a small, installable reading app that replaces the reflex scroll with a feed of **concepts worth learning**. Every card is one transferable idea pulled from the 112 engineering essays on [arpitbhayani.me](https://arpitbhayani.me/blogs/). One essay can yield one, two, or three concepts — never a section-by-section breakdown. Each card cites the essay and section, and adds a real further-reading link when the essay itself cites one, with streaks, XP, recall quizzes, saved ideas, collections, highlights and notes on top.
 
 > Feedwise is an independent, personal reading layer. All ideas and underlying essays belong to Arpit Bhayani; cards are editorial paraphrases and link back to the original. It is not affiliated with the author.
 
 ## What's inside
 
-- **An endless, swipe-style feed** of one-idea cards. Feed order is deterministic per user and per day, so it stays stable while you read, and likes/saves never reshuffle it.
-- **Latest tab** for a strict newest-essay-first read, plus category tabs. Inside `For you`, each essay's insights stay together and in order, so a run of cards reads like the argument of the essay instead of loose paragraphs.
-- **Typed, synthesized insight cards.** Every idea is a concept, pattern, tradeoff, failure, action or result, with a "why it matters" line, an implementation/application note, practical steps ("Try it yourself") and checklist-style action items. The card itself stays a teaser; the reader shows the full breakdown.
-- **Vocabulary and narrative layer.** Each essay opens with a **Start here** card that defines the terms the rest of the cards assume, and closes with **Where this leads** — consequences, open questions and concrete next steps. Every reader has **Contents** (the full arc in reading order) and **Terms** (the essay glossary) one tap away.
-- **Two ways to read.** Swipe the card feed one idea at a time, or open **Read the whole explainer** for a continuous long-form scroll of the same essay: primer, terms, every insight, implementation notes, steps and the closing arc in one place.
+- **An endless, swipe-style feed of standalone concepts.** Feed order is deterministic per user and per day, so it stays stable while you read, and likes/saves never reshuffle it.
+- **Latest tab** for a strict newest-essay-first read, plus category tabs.
+- **One card, one concept.** Every card has a declarative headline, a 2–4 sentence self-contained explanation, a "why it matters" line, and an optional concrete example. Types: concept, pattern, tradeoff, failure and action.
+- **Source-first.** Every card shows the essay and section. **Source** opens the exact section of the original essay; **Further reading** opens a real paper, docs page or reference that the essay itself cites, when one exists.
 - **Email + password auth** with hashed passwords (`bcryptjs`) and database-backed sessions in an httpOnly cookie.
 - **Daily goal + streak** with a progress ring, a 7-day chart and a 28-day heatmap.
 - **XP, levels and topic mastery** across five topics: distributed systems, algorithms, systems internals, AI systems and career growth.
@@ -70,31 +69,35 @@ Nothing else is required — there are no migrations to run and no background jo
 The generated content is committed, so you only need this if you want to refresh the library.
 
 ```bash
-pnpm content:fetch        # scrape the 112 essay pages into .cache/pages
-pnpm content:merge        # merge curated card batches into content/curated.json
-pnpm content:merge-arcs   # merge primer/outro/glossary batches into content/arcs.json
-pnpm content:build        # rebuild content/feed.json + content/quizzes.json
-pnpm content:curate       # merge cards + arcs, then build
-pnpm content              # fetch + build (extraction fallback only)
+pnpm content:fetch           # scrape the 112 essay pages into .cache/pages
+pnpm content:merge-concepts  # merge concept batches into content/concepts.json
+pnpm content:build           # rebuild content/feed.json + content/quizzes.json
+pnpm content:concepts        # merge + build
+pnpm content                 # fetch + build
 ```
 
-Curated cards are authored per essay in `content/curated.json`; implementation notes and practical steps live in `content/curated-details.json`. The batch workflow (`scripts/merge-curated.mjs`) merges `.cache/curated/batch-*.json`, validates types, titles, coverage, action lists and copy-paste runs, then writes both files. Vocabulary and narrative arcs live in `content/arcs.json` (the six editorial essays are maintained by hand in `content/arcs-manual.json`); `scripts/merge-arcs.mjs` validates 2–4 terms, an arc, a primer, an outro and next steps for every essay.
+The feed source is `content/concepts.json`: an array of standalone concepts with a headline, type, 2–4 sentence explanation, "why it matters", the source section, and an optional further-reading link. The six newest essays are hand-maintained in `content/concepts-manual.json`; the rest are merged from `.cache/concepts/batch-*.json`.
+
+`scripts/merge-concepts.mjs` validates:
+
+- every essay has 1–3 concepts, never a section-by-section breakdown
+- every concept has a title, type, takeaway and body
+- every section/anchor points at a real block in the essay
+- every `reference` URL is one the essay itself cites
+- no meta language and no duplicate concepts
 
 `content:build` also writes client-fetchable copies to `public/data/`, which the feed uses for infinite scrolling and offline reading.
 
-There are two content paths:
+The earlier card/explainer experiment (`content/curated.json`, `content/arcs.json`) remains in the repo for reference but is not used by the feed. The concept feed is built from `content/concepts.json`.
 
-- **Editorial (curated) cards** in `content/curated.json`. All 112 essays are currently editorially curated: each card has a specific headline, a 2–4 sentence explanation in our own words, a one-line "why it matters", a type, an implementation/application note and practical steps. Action cards render their lists as checklists.
-- **Extraction fallback** in `scripts/build-content.mjs` for any future essay that is not in the overlay yet.
+How concepts are extracted:
 
-How the extraction works:
-
-- Each essay is read as the author wrote it: `h2` sections and paragraphs, plus lists, quotes, code and tables.
-- A card is **one paragraph, not one arbitrary word-count chunk**. The strongest self-contained claim in the paragraph becomes the headline; the rest of the paragraph (and a short list, when it belongs to the same thought) becomes the explanation.
-- If no sentence in a paragraph is a clean, standalone claim, the authored section heading is used as the headline instead. This is why some cards read as a topic and others as a claim — both stay grammatical, and the body always carries the insight.
-- Admin scaffolding is dropped: meta descriptions, "in this essay" preambles, prerequisites, conclusions, footnotes, images and navigation chrome.
-- KaTeX markup is collapsed back to its TeX source and stored inline between backticks. Code-heavy walkthroughs stay in the reader and are never used as a headline.
-- Quiz questions are generated from the full essay text, not just the cards, so tightening the cards does not shrink the quiz bank; each answer is a cloze over one number or one inline-code term, with distractors drawn from the same article/topic.
+- Read the whole essay, not one paragraph at a time.
+- Keep only transferable lessons: a pattern, concept, tradeoff, failure mode or action that still makes sense without the essay.
+- One card explains one concept in 2–4 self-contained sentences, with an example when the essay provides one.
+- No intro cards, no section cards, no “where this leads” sequence. If an essay has one good concept, it gets one card.
+- The essay and section are always the source; a further-reading link is added only when the essay itself cites one.
+- Quiz questions are generated from the full essay text, not the cards; each answer is a cloze over one number or one inline-code term, with distractors drawn from the same article/topic.
 
 Regenerate the app icons with `pnpm icons` (requires the committed `sharp` dev dependency).
 
@@ -107,7 +110,7 @@ app/
   onboarding/       3-step first-run flow
   api/              auth, idea state, collections, profile, interests, quiz, highlights
 components/
-  feed/             feed cards, card reader, explainer reader, blocks renderer, inline quiz
+  feed/             feed cards, reader, blocks renderer, inline quiz
   saved/ topics/ quiz/ profile/ highlights/ onboarding/ auth/
   content/          markdown-ish inline renderer + KaTeX
   layout/           app shell, header, bottom nav
@@ -117,9 +120,9 @@ lib/
   state.ts          reads, likes, saves, highlights, stats, quiz selection
   feed.ts           deterministic feed ranking, essay grouping and category interleaving
   content.ts        server-side access to the generated content
-content/            generated feed + quiz bank (committed)
+content/            generated concept feed + quiz bank (committed)
 public/             manifest icons, service worker, data bundle
-scripts/            scraper, content builder, quiz builder, icon builder
+scripts/            scraper, concept merger, content builder, quiz builder, icon builder
 ```
 
 ## Notes on the data model

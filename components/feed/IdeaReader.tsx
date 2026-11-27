@@ -167,7 +167,9 @@ export function IdeaReader({
             {idea.title}
           </h1>
           <p className="mt-3 text-[12px] text-muted">
-            From <span className="text-cream/70">{article.title}</span> by Arpit Bhayani
+            From <span className="text-cream/70">{article.title}</span>
+            {idea.section ? <span className="text-muted/70"> · {idea.section}</span> : null} by
+            Arpit Bhayani
           </p>
 
           {series.length > 1 || terms.length ? (
@@ -307,6 +309,26 @@ export function IdeaReader({
             <p className="mt-6 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-3 text-[11px] leading-relaxed text-muted">
               {idea.context}
             </p>
+          ) : null}
+
+          {idea.reference ? (
+            <a
+              href={idea.reference.url}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-6 flex items-center gap-3 rounded-2xl border border-lime/20 bg-lime/[0.04] p-4 transition-colors hover:bg-lime/[0.07]"
+            >
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-lime/15 text-lime">
+                <BookOpen size={16} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[12px] font-medium text-cream">Further reading</span>
+                <span className="mt-0.5 block truncate text-[11px] text-muted">
+                  {idea.reference.title}
+                </span>
+              </span>
+              <ArrowUpRight size={14} className="shrink-0 text-lime/70" />
+            </a>
           ) : null}
 
           <a
